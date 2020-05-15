@@ -24,6 +24,9 @@
         });
       }
       $(document).ready(function() {
+        $('span.endpoint').each(function(i, obj) {
+          $(obj).data('failures', 0);
+        });
         refresh();
         setInterval(refresh, 90000);
       });

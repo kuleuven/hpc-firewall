@@ -14,6 +14,7 @@ import (
 	consul "github.com/hashicorp/consul/api"
 	"github.com/hashicorp/go-hclog"
 	echo "github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/oauth2"
 )
 
