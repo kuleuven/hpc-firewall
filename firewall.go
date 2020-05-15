@@ -278,7 +278,7 @@ func (f *Firewall) handleOauthCallback(c echo.Context) error {
 		Value:    encoded,
 		Path:     "/",
 		Secure:   true,
-		HttpOnly: true,
+		HttpOnly: false,
 		Domain:   fmt.Sprintf(".%s", f.Domain),
 	}
 	c.SetCookie(cookie)

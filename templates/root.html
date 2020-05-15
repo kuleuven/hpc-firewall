@@ -8,13 +8,12 @@
         $('span.endpoint').each(function(i, obj) {
           if ($(obj).data('failures') < 3) {
             $.get($(obj).data('url'), {}, function(data) {
-              var obj = JSON.parse(data);
-              if (obj.needs_refresh) {
+              if (data.needs_refresh) {
                 location.reload();
                 return;
               }
 
-              $(obj).html(data);
+              $(obj).html(JSON.stringify(data));
               $(obj).data('failures', 0);
             }).fail(function() {
               $(obj).html('failed');
