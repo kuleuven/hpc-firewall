@@ -1,3 +1,4 @@
+//go:generate rice embed-go
 package main
 
 import (
@@ -7,7 +8,6 @@ import (
 	"net/http"
 
 	"gitea.icts.kuleuven.be/ceif-lnx/go/webapp/framework"
-	rice "github.com/GeertJohan/go.rice"
 	"github.com/gorilla/securecookie"
 	consul "github.com/hashicorp/consul/api"
 	"github.com/hashicorp/go-hclog"
