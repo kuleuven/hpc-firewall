@@ -111,7 +111,8 @@ func (f *Firewall) Run() error {
 	})
 
 	c := &framework.Config{
-		Logger: l,
+		Logger:       l,
+		TemplatesBox: rice.MustFindBox("templates"),
 	}
 	e := framework.New(c)
 
