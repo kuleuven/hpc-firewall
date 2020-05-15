@@ -116,6 +116,16 @@ func (f *Firewall) Run() error {
 	}
 	e := framework.New(c)
 
+	domains := []string{fmt.Sprintf("https://%s", f.Domain)}
+
+	for _, s := range f.Subdomains {
+		domains = append(domains, fmt.Sprintf("https://%s.%s/endpoint", s, f.Domain))
+	}
+
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: domains,
+	}))
+
 	assetHandler := http.FileServer(rice.MustFindBox("static").HTTPBox())
 
 	e.GET("/", f.handleRoot)
