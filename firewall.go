@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -27,6 +28,7 @@ type FirewallConfig struct {
 	OauthClientSecret string
 	ConsulURL         string
 	ConsulToken       string
+	ConsulPath        string
 	HashKey           string
 	BlockKey          string
 	Domain            string
@@ -200,6 +202,14 @@ func (f *Firewall) handleEndpoint(c echo.Context) error {
 
 func (f *Firewall) handleEndpointAuthenticated(c echo.Context, info []byte) error {
 	ip := getFFIP(c.Request().Header.Get("X-LB-Forwarded-For"))
+
+	kv := f.ConsulClient.KV()
+	p := &consul.KVPair{Key: f.ConsulPath + "/" + base64.StdEncoding.EncodeToString([]byte(ip))}
+
+	_, err := kv.Put(p, nil)
+	if err != nil {
+		return fmt.Errorf("could not add ip to consul kv store", err)
+	}
 
 	// Return response
 	r := &EndpointResponse{

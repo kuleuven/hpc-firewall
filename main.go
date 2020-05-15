@@ -35,6 +35,7 @@ func main() {
 	rootCmd.Flags().StringVar(&config.OauthClientSecret, "oauth-client-secret", os.Getenv("OAUTH_CLIENT_SECRET"), "Oauth Client secret")
 	rootCmd.Flags().StringVar(&config.ConsulURL, "consul-addr", "", "Consul address")
 	rootCmd.Flags().StringVar(&config.ConsulToken, "consul-token", "", "Consul token")
+	rootCmd.Flags().StringVarP(&config.ConsulPath, "consul-path", "p", os.Getenv("CONSUL_PATH"), "Consul path")
 	rootCmd.Flags().StringVar(&config.HashKey, "hash-key", os.Getenv("HASH_KEY"), "Hash key for securecookie. Should be at least 32 bytes long")
 	rootCmd.Flags().StringVar(&config.BlockKey, "block-key", os.Getenv("BLOCK_KEY"), "Block key for securecookie. Should be 16 (AES-128) or 32 bytes (AES-256) long")
 	rootCmd.Flags().StringVarP(&config.Domain, "domain", "d", os.Getenv("DOMAIN"), "Domain to host the website")
