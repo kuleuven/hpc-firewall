@@ -1,0 +1,42 @@
+<html>
+  <head>
+    <title>HPC Firewall</title>
+    <script src="/static/jquery-3.5.1.min.js"></script>
+    <script>
+      function refresh() {
+        $('span.endpoint').each(function(i, obj) {
+          if ($(obj).data('failures') < 3) {
+            $.get($(obj).data('url'), {}, function(data) {
+              var obj = JSON.parse(data);
+              if (obj.needs_refresh) {
+                location.reload();
+                return;
+              }
+
+              $(obj).html(data);
+              $(obj).data('failures', 0);
+            }).fail(function() {
+              $(obj).html('failed');
+              $(obj).data('failures', $(obj).data('failures') + 1);
+            });
+          }
+        });
+      }
+      $(document).ready(function() {
+        refresh();
+        setInterval(refresh, 90000);
+      });
+    </script>
+  </head>
+  <body>
+    Logged on successfully.
+
+    <pre>
+      {{ .Info }}
+    </pre>
+    
+    {{ range .Endpoints }}
+    <span class="endpoint" data-url="{{ . }}">Loading...</span> 
+    {{ end }}
+  </body>
+</html>
