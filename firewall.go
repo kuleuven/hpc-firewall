@@ -10,6 +10,7 @@ import (
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/gorilla/securecookie"
 	consul "github.com/hashicorp/consul/api"
+	"github.com/hashicorp/go-hclog"
 	echo "github.com/labstack/echo/v4"
 	"golang.org/x/oauth2"
 )
@@ -102,7 +103,14 @@ func NewFirewall(config FirewallConfig) (*Firewall, error) {
 
 // Run the firewall
 func (f *Firewall) Run() error {
-	c := &framework.Config{}
+	l := hclog.New(&hclog.LoggerOptions{
+		Name:  "webapp",
+		Level: hclog.LevelFromString("INFO"),
+	})
+
+	c := &framework.Config{
+		Logger: l,
+	}
 	e := framework.New(c)
 
 	assetHandler := http.FileServer(rice.MustFindBox("static").HTTPBox())
