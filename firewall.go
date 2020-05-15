@@ -5,9 +5,11 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"gitea.icts.kuleuven.be/ceif-lnx/go/webapp/framework"
+	rice "github.com/GeertJohan/go.rice"
 	"github.com/gorilla/securecookie"
 	consul "github.com/hashicorp/consul/api"
 	"github.com/hashicorp/go-hclog"
@@ -131,16 +133,22 @@ func (f *Firewall) handleRoot(c echo.Context) error {
 		value := make(map[string]string)
 		if err = f.SecureCookie.Decode(CookieName, cookie.Value, &value); err == nil {
 			token = value["token"]
+		} else {
+			log.Printf("Decoding cookie resulted in error: %s", err)
 		}
+	} else {
+		log.Printf("Retrieving cookie resulted in error: %s", err)
 	}
 
 	// Check whether token is valid
 	if token != "" {
 		info, err := f.getUserInfo(token)
 
-		if err != nil {
+		if err == nil {
 			return f.handleRootAuthenticated(c, info)
 		}
+
+		log.Printf("Fetching user info resulted in error: %s", err)
 	}
 
 	// Redirect if not valid
@@ -194,7 +202,7 @@ func (f *Firewall) handleEndpoint(c echo.Context) error {
 	if token != "" {
 		info, err := f.getUserInfo(token)
 
-		if err != nil {
+		if err == nil {
 			return f.handleEndpointAuthenticated(c, info)
 		}
 	}
