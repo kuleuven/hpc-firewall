@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 
 	"gitea.icts.kuleuven.be/ceif-lnx/go/webapp/framework"
 	rice "github.com/GeertJohan/go.rice"
@@ -231,12 +232,20 @@ func (f *Firewall) handleEndpoint(c echo.Context) error {
 func (f *Firewall) handleEndpointAuthenticated(c echo.Context, info []byte) error {
 	ip := getFFIP(c.Request().Header.Get("X-LB-Forwarded-For"))
 
-	kv := f.ConsulClient.KV()
-	p := &consul.KVPair{Key: f.ConsulPath + "/" + base64.StdEncoding.EncodeToString([]byte(ip))}
-
-	_, err := kv.Put(p, nil)
+	t, err := time.Now().MarshalBinary()
 	if err != nil {
-		return fmt.Errorf("could not add ip to consul kv store", err)
+		return fmt.Errorf("could not marshal current time: %s", err)
+	}
+
+	kv := f.ConsulClient.KV()
+	p := &consul.KVPair{
+		Key:   f.ConsulPath + "/" + base64.StdEncoding.EncodeToString([]byte(ip)),
+		Value: t,
+	}
+
+	_, err = kv.Put(p, nil)
+	if err != nil {
+		return fmt.Errorf("could not add ip to consul kv store: %s", err)
 	}
 
 	// Return response
