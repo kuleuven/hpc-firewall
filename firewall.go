@@ -324,6 +324,10 @@ func (f *Firewall) getUserInfo(token string) ([]byte, error) {
 		return nil, fmt.Errorf("failed getting user info: %s", err.Error())
 	}
 
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status: %s", response.Status)
+	}
+
 	defer response.Body.Close()
 	contents, err := ioutil.ReadAll(response.Body)
 	if err != nil {
