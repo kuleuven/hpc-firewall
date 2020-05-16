@@ -125,7 +125,8 @@ func (f *Firewall) Run() error {
 	}
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: domains,
+		AllowOrigins:     domains,
+		AllowCredentials: true,
 	}))
 
 	assetHandler := http.FileServer(rice.MustFindBox("static").HTTPBox())
