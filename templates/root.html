@@ -7,17 +7,26 @@
       function refresh() {
         $('span.endpoint').each(function(i, obj) {
           if ($(obj).data('failures') < 3) {
-            $.get($(obj).data('url'), {}, function(data) {
-              if (data.needs_refresh) {
-                location.reload();
-                return;
-              }
+            $.ajax({
+              url: $(obj).data('url'), 
+              data: {},
+              dataType: 'json',
+              success: function(data) {
+                if (data.needs_refresh) {
+                  location.reload();
+                  return;
+                }
 
-              $(obj).html(JSON.stringify(data));
-              $(obj).data('failures', 0);
-            }).fail(function() {
-              $(obj).html('failed');
-              $(obj).data('failures', $(obj).data('failures') + 1);
+                $(obj).html(JSON.stringify(data));
+                $(obj).data('failures', 0);
+              },
+              error: function() {
+                $(obj).html('failed');
+                $(obj).data('failures', $(obj).data('failures') + 1);
+              },
+              xhrFields: {
+                withCredentials: true
+              }
             });
           }
         });
