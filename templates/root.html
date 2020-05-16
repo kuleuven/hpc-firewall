@@ -5,7 +5,7 @@
     <script src="/static/jquery-3.5.1.min.js"></script>
     <script>
       function refresh() {
-        $('span.endpoint').each(function(i, obj) {
+        $('div.endpoint').each(function(i, obj) {
           if ($(obj).data('failures') < 3) {
             $.ajax({
               url: $(obj).data('url'), 
@@ -17,11 +17,11 @@
                   return;
                 }
 
-                $(obj).html(JSON.stringify(data));
+                $(obj).html("<strong>" + data.ip + "</strong> " + data.message);
                 $(obj).data('failures', 0);
               },
               error: function() {
-                $(obj).html('failed');
+                $(obj).html('');
                 $(obj).data('failures', $(obj).data('failures') + 1);
               },
               xhrFields: {
@@ -32,7 +32,7 @@
         });
       }
       $(document).ready(function() {
-        $('span.endpoint').each(function(i, obj) {
+        $('div.endpoint').each(function(i, obj) {
           $(obj).data('failures', 0);
         });
         refresh();
@@ -41,15 +41,20 @@
     </script>
   </head>
   <body>
-    Logged on successfully.
+    <h1>HPC Firewall</h1>
 
+    <p>Logged on successfully.</p>
+
+    {{ range .Endpoints }}
+    <div class="endpoint" data-url="{{ . }}"></div> 
+    {{ end }}
+
+    <p>User information:</p>
     <pre>
       {{ .Info }}
     </pre>
     
-    {{ range .Endpoints }}
-    <span class="endpoint" data-url="{{ . }}">Loading...</span> 
-    {{ end }}
+    <p>Keep this page open.</p>
   </body>
 </html>
 {{ end }}

@@ -196,9 +196,9 @@ func (f *Firewall) handleRootAuthenticated(c echo.Context, info []byte) error {
 
 // An EndpointResponse serves as structure for endpoint responses
 type EndpointResponse struct {
-	NeedsRefresh bool `json:"needs_refresh"`
-	Message      string
-	IP           string
+	NeedsRefresh bool   `json:"needs_refresh"`
+	Message      string `json:"message"`
+	IP           string `json:"ip"`
 }
 
 func (f *Firewall) handleEndpoint(c echo.Context) error {
