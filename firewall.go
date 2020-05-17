@@ -236,14 +236,15 @@ func (f *Firewall) handleEndpointAuthenticated(c echo.Context, info *UserInfo) e
 		IP   = getFFIP(c.Request().Header.Get("X-LB-Forwarded-For"))
 	)
 
-	if err := AddConsulIpsetRecord(kv, path, IP); err != nil {
+	t, err := AddConsulIpsetRecord(kv, path, IP)
+	if err != nil {
 		return fmt.Errorf("could not add ip to consul kv store: %s", err)
 	}
 
 	// Return response
 	r := &EndpointResponse{
 		IP:      IP,
-		Message: "IP was added to database",
+		Message: fmt.Sprintf("IP was granted access since %s [valid until %s]", t.Since.Format("2006-01-02 15:04:05"), t.Expiration.Format("15:04:05")),
 	}
 
 	return c.JSON(http.StatusOK, r)
