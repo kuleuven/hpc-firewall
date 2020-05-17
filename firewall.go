@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"gitea.icts.kuleuven.be/ceif-lnx/go/webapp/framework"
+	"gitea.icts.kuleuven.be/hpc/hpc-firewall/consulkvipset"
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/gorilla/securecookie"
 	consul "github.com/hashicorp/consul/api"
@@ -231,12 +232,11 @@ func (f *Firewall) handleEndpoint(c echo.Context) error {
 
 func (f *Firewall) handleEndpointAuthenticated(c echo.Context, info *UserInfo) error {
 	var (
-		kv   = f.ConsulClient.KV()
 		path = f.ConsulPath + "/" + info.ID
 		IP   = getFFIP(c.Request().Header.Get("X-LB-Forwarded-For"))
 	)
 
-	t, err := AddConsulIpsetRecord(kv, path, IP)
+	t, err := consulkvipset.AddIpsetRecord(f.ConsulClient, path, IP)
 	if err != nil {
 		return fmt.Errorf("could not add ip to consul kv store: %s", err)
 	}

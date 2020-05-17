@@ -1,6 +1,7 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.30.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
+gitea.icts.kuleuven.be/ceif-lnx/go v0.0.0-20200427102449-ebc8e5ee9a1d h1:dfPcoFJzpJt6jXCtl+m/MlANf7qDBHeMHdNQAaQvXrY=
 gitea.icts.kuleuven.be/ceif-lnx/go/configfile v0.0.0-20200224214306-09b12ff786a1/go.mod h1:rIyFpUZvXGdhxP13c16cb8RSlTcHfYqWVtoauMXIaY0=
 gitea.icts.kuleuven.be/ceif-lnx/go/nomad v0.0.0-20200217205210-528186a0ff2a/go.mod h1:gKXUF7fh5Iazbd+VtimK+EJlZHsW8X4GhTAvgA1ziGU=
 gitea.icts.kuleuven.be/ceif-lnx/go/nomad v0.0.0-20200224214306-09b12ff786a1/go.mod h1:gKXUF7fh5Iazbd+VtimK+EJlZHsW8X4GhTAvgA1ziGU=

@@ -1,4 +1,4 @@
-module "https://gitea.icts.kuleuven.be/hpc/hpc-firewall"
+module gitea.icts.kuleuven.be/hpc/hpc-firewall
 
 go 1.12
 
