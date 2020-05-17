@@ -55,7 +55,6 @@ func (s *KVIpset) Read() error {
 		err = json.Unmarshal(pair.Value, &s.records)
 		if err != nil {
 			log.Printf("could not parse current value: %s", err)
-		} else {
 			s.records = []KVIpsetRecord{}
 		}
 	}
@@ -77,7 +76,7 @@ func (s *KVIpset) Add(ip string) (*KVIpsetRecord, error) {
 	newRecords := []KVIpsetRecord{record}
 
 	for _, r := range s.records {
-		if r.Expiration.After(now) {
+		if now.Before(r.Expiration) {
 			if r.IP == record.IP {
 				record.Since = r.Since
 			} else {

@@ -244,7 +244,7 @@ func (f *Firewall) handleEndpointAuthenticated(c echo.Context, info *UserInfo) e
 	// Return response
 	r := &EndpointResponse{
 		IP:      IP,
-		Message: fmt.Sprintf("IP was granted access since %s [valid until %s]", t.Since.Format("2006-01-02 15:04:05"), t.Expiration.Format("15:04:05")),
+		Message: fmt.Sprintf("IP is granted access since %s [valid until %s]", t.Since.Format("2006-01-02 15:04:05"), t.Expiration.Format("15:04:05")),
 	}
 
 	return c.JSON(http.StatusOK, r)
