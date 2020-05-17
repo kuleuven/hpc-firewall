@@ -73,17 +73,19 @@ func (s *KVIpset) Add(ip string) (*KVIpsetRecord, error) {
 		}
 	)
 
-	newRecords := []KVIpsetRecord{record}
+	newRecords := []KVIpsetRecord{}
 
 	for _, r := range s.records {
 		if now.Before(r.Expiration) {
 			if r.IP == record.IP {
 				record.Since = r.Since
 			} else {
-				newRecords = append(newRecords, record)
+				newRecords = append(newRecords, r)
 			}
 		}
 	}
+
+	newRecords = append(newRecords, record)
 
 	s.records = newRecords
 
