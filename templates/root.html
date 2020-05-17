@@ -43,16 +43,11 @@
   <body>
     <h1>HPC Firewall</h1>
 
-    <p>Logged on successfully.</p>
+    <p>Logged on successfully as {{ .ID }}.</p>
 
     {{ range .Endpoints }}
     <div class="endpoint" data-url="{{ . }}"></div> 
     {{ end }}
-
-    <p>User information:</p>
-    <pre>
-      {{ .Info }}
-    </pre>
     
     <p>Keep this page open.</p>
   </body>

@@ -2,12 +2,11 @@
 package main
 
 import (
-	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 
 	"gitea.icts.kuleuven.be/ceif-lnx/go/webapp/framework"
 	rice "github.com/GeertJohan/go.rice"
@@ -177,18 +176,18 @@ func (f *Firewall) handleRoot(c echo.Context) error {
 
 // RootPayload serves as payload for the root.html template
 type RootPayload struct {
-	Info      string
+	ID        string
 	Endpoints []string
 }
 
-func (f *Firewall) handleRootAuthenticated(c echo.Context, info []byte) error {
+func (f *Firewall) handleRootAuthenticated(c echo.Context, info *UserInfo) error {
 	endpoints := []string{}
 	for _, s := range f.Subdomains {
 		endpoints = append(endpoints, fmt.Sprintf("https://%s.%s/endpoint", s, f.Domain))
 	}
 
 	payload := RootPayload{
-		Info:      fmt.Sprintf("%s", info),
+		ID:        info.ID,
 		Endpoints: endpoints,
 	}
 	return c.Render(http.StatusOK, "root", payload)
@@ -230,28 +229,20 @@ func (f *Firewall) handleEndpoint(c echo.Context) error {
 	return c.JSON(http.StatusOK, r)
 }
 
-func (f *Firewall) handleEndpointAuthenticated(c echo.Context, info []byte) error {
-	ip := getFFIP(c.Request().Header.Get("X-LB-Forwarded-For"))
+func (f *Firewall) handleEndpointAuthenticated(c echo.Context, info *UserInfo) error {
+	var (
+		kv   = f.ConsulClient.KV()
+		path = f.ConsulPath + "/" + info.ID
+		IP   = getFFIP(c.Request().Header.Get("X-LB-Forwarded-For"))
+	)
 
-	t, err := time.Now().MarshalBinary()
-	if err != nil {
-		return fmt.Errorf("could not marshal current time: %s", err)
-	}
-
-	kv := f.ConsulClient.KV()
-	p := &consul.KVPair{
-		Key:   f.ConsulPath + "/" + base64.StdEncoding.EncodeToString([]byte(ip)),
-		Value: t,
-	}
-
-	_, err = kv.Put(p, nil)
-	if err != nil {
+	if err := AddConsulIpsetRecord(kv, path, IP); err != nil {
 		return fmt.Errorf("could not add ip to consul kv store: %s", err)
 	}
 
 	// Return response
 	r := &EndpointResponse{
-		IP:      ip,
+		IP:      IP,
 		Message: "IP was added to database",
 	}
 
@@ -311,7 +302,14 @@ func (f *Firewall) getToken(state string, code string) (string, error) {
 	return token.AccessToken, nil
 }
 
-func (f *Firewall) getUserInfo(token string) ([]byte, error) {
+// UserInfo returned by oauth introspect url
+type UserInfo struct {
+	FirstName string `json:"first_name"`
+	Email     string `json:"email"`
+	ID        string `json:"id"`
+}
+
+func (f *Firewall) getUserInfo(token string) (*UserInfo, error) {
 	var bearer = "Bearer " + token
 
 	req, err := http.NewRequest("GET", OauthIntrospectURL, nil)
@@ -334,5 +332,12 @@ func (f *Firewall) getUserInfo(token string) ([]byte, error) {
 		return nil, fmt.Errorf("failed reading response body: %s", err.Error())
 	}
 
-	return contents, nil
+	var u UserInfo
+
+	err = json.Unmarshal(contents, &u)
+	if err != nil {
+		return nil, fmt.Errorf("failed parsing response body: %s", err.Error())
+	}
+
+	return &u, nil
 }
