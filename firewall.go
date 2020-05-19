@@ -375,12 +375,19 @@ func (f *Firewall) handleIpset(c echo.Context) error {
 }
 
 func (f *Firewall) handleIpsetAuthenticated(c echo.Context) error {
-	var result []consulkvipset.IpsetEntry
+	var (
+		givenIndex = c.FormValue("index")
+		result     []consulkvipset.IpsetEntry
+		index      uint64
+		err        error
+	)
 
 	// Parse index
-	index, err := strconv.ParseUint(c.FormValue("index"), 10, 64)
-	if err != nil {
-		return err
+	if givenIndex != "" {
+		index, err = strconv.ParseUint(givenIndex, 10, 64)
+		if err != nil {
+			return err
+		}
 	}
 
 	// List effective ips
