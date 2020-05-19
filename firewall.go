@@ -366,7 +366,7 @@ func (f *Firewall) handleIpset(c echo.Context) error {
 	// Read token
 	value := make(map[string]string)
 	if err := f.SecureCookie.Decode(CookieName, reqToken, &value); err == nil {
-		if value["payload"] == "true" {
+		if value["admin"] == "true" {
 			return f.handleIpsetAuthenticated(c)
 		}
 	}
