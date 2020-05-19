@@ -170,3 +170,7 @@ div.pubkey-panel>.pubkey-body {
 .select2 {
   width: 100% !important;
 }
+
+div.endpoint:last-of-type {
+  margin-bottom: 26px;
+}
