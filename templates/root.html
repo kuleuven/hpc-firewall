@@ -2,6 +2,13 @@
 <html>
   <head>
     <title>HPC Firewall</title>
+
+    <link rel="stylesheet" href="/static/django.css">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/static/overwrites.css">
+    <link rel="icon" type="image/png" href="/static/favicon.png" />
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Condensed:700,300|Open+Sans:400i,600i,700i,300,400,700,600" rel="stylesheet">
+
     <script src="/static/jquery-3.5.1.min.js"></script>
     <script>
       function refresh() {
@@ -46,16 +53,73 @@
       });
     </script>
   </head>
-  <body>
-    <h1>HPC Firewall</h1>
+  <body class="page-home">
+    <div class="page-wrap">
 
-    <p>Logged on successfully as {{ .ID }}.</p>
+      <header class="region page-header" role="banner">
 
-    {{ range .Endpoints }}
-    <div class="endpoint" data-url="{{ . }}"></div> 
-    {{ end }}
-    
-    <p>Keep this page open.</p>
+        <div class="section section--sml" style="border-bottom: 1px solid #e8e8e8">
+          <div class="container">
+            <div class="grid" id="section-header-0">
+  
+              <div class="grid__12 grid--bp-med__12" id="block-0-1">
+                <a href="/" class="page-header__logo" title="account.vscentrum.be">
+                  <img src="/static/logo.png" data-url="/static/logo.png" alt="Logo" />
+                </a>
+              </div>
+  
+            </div>
+          </div>
+        </div>
+      </header>
+  
+      <div class="region page-main" role="main">
+        <div class="section section--border-thick">
+          <div class="container">
+            <div class="grid" id="section-content-0">
+              <div class="grid__12 grid--bp-med__12" id="content-core">
+  
+                <h1>HPC Firewall</h1>
+
+                <p>Logged on successfully as {{ .ID }}.</p>
+
+                {{ range .Endpoints }}
+                <div class="endpoint" data-url="{{ . }}"></div> 
+                {{ end }}
+                
+                <p>Keep this page open.</p>
+  
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <footer class="region page-footer" role="contentinfo">
+        <div class="section section--sml">
+          <div class="container">
+            <div class="grid" id="section-footer-1">
+              <div class="grid__12" id="block-1-1">
+                <div class="text widget block " id="widget-305">
+                  <div class="text__inner clearfix">
+                    <p>© FWO</p>
+                  </div>
+                </div>
+                <nav class="nav nav--inline " id="widget-306" role="navigation">
+                  <ul class="menu1 ">
+                    <li class="first even">
+                      <a href="https://vscentrum.be/" class="nav__link nav__link--vscentrumbe1">VScentrum.be</a>
+                    </li>
+                  </ul>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+  
+    </div> <!-- /.page-wrap -->
+
   </body>
 </html>
 {{ end }}
