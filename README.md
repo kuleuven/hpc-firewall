@@ -19,3 +19,11 @@ Parameters:
 * `--hash-key` or `BLOCK_KEY`: Block key for encrypting secure cookies. Should be either 16 (AES-128) or 32 (AES-256) bytes long
 * `--domain` or `DOMAIN`: The main domain of the website (e.g. `example.com`)
 * `--subdomains` or `SUBDOMAINS`: Comma-separated list of subdomains (e.g. `ipv4,ipv6`)
+
+The command logs an admin password at startup, this can be used to retrieve the current ipset at `/ipset`. The result contains the `X-Last-Index` header which can be passed to the next GET request to make it blocking until the next change.
+
+```bash
+curl --header "Authorization: <PASSWORD>" https://example.com/ipset\?index\=<INDEX>
+```
+
+See `example/hpc-firewall.py` for a script using this endpoing.
