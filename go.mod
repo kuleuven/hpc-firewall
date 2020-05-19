@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	gitea.icts.kuleuven.be/ceif-lnx/go/webapp v0.0.0-20200427102449-ebc8e5ee9a1d
+	github.com/42wim/ipsetd v0.0.0-20200509190103-ce19b12d6588 // indirect
 	github.com/GeertJohan/go.rice v1.0.0
 	github.com/gorilla/securecookie v1.1.1
 	github.com/hashicorp/consul/api v1.4.0

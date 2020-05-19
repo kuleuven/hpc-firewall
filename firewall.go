@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 
 	"gitea.icts.kuleuven.be/ceif-lnx/go/webapp/framework"
 	"gitea.icts.kuleuven.be/hpc/hpc-firewall/consulkvipset"
@@ -134,6 +135,7 @@ func (f *Firewall) Run() error {
 	e.GET("/", f.handleRoot)
 	e.GET("/callback", f.handleOauthCallback)
 	e.GET("/endpoint", f.handleEndpoint)
+	e.GET("/ipset", f.handleIpset)
 	e.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))
 
 	return e.Start(":80")
@@ -231,12 +233,9 @@ func (f *Firewall) handleEndpoint(c echo.Context) error {
 }
 
 func (f *Firewall) handleEndpointAuthenticated(c echo.Context, info *UserInfo) error {
-	var (
-		path = f.ConsulPath + "/" + info.ID
-		IP   = getFFIP(c.Request().Header.Get("X-LB-Forwarded-For"))
-	)
+	var IP = getFFIP(c.Request().Header.Get("X-LB-Forwarded-For"))
 
-	t, err := consulkvipset.AddIpsetRecord(f.ConsulClient, path, IP)
+	t, err := consulkvipset.AddIpsetRecord(f.ConsulClient, f.ConsulPath, info.ID, IP)
 	if err != nil {
 		return fmt.Errorf("could not add ip to consul kv store: %s", err)
 	}
@@ -341,4 +340,26 @@ func (f *Firewall) getUserInfo(token string) (*UserInfo, error) {
 	}
 
 	return &u, nil
+}
+
+func (f *Firewall) handleIpset(c echo.Context) error {
+	var result []consulkvipset.IpsetEntry
+
+	// Parse index
+	index, err := strconv.ParseUint(c.FormValue("index"), 10, 64)
+	if err != nil {
+		return err
+	}
+
+	// List effective ips
+	result, index, err = consulkvipset.ListEffectiveIPs(f.ConsulClient, f.ConsulPath, index)
+	if err != nil {
+		return err
+	}
+
+	// Send response
+	c.Response().Header().Set("X-Last-Index", fmt.Sprintf("%d", index))
+	c.Response().WriteHeader(http.StatusOK)
+
+	return json.NewEncoder(c.Response()).Encode(&result)
 }
