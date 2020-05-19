@@ -68,9 +68,9 @@ func (r *KVIpsetRecord) readData(pair *consul.KVPair) error {
 
 // An IpsetEntry describes an entry to be added to some ipset
 type IpsetEntry struct {
-	Addr    string
-	Timeout uint
-	Comment string
+	Addr    string `json:"ip"`
+	Timeout uint   `json:"timeout"`
+	Comment string `json:"comment"`
 }
 
 // EffectiveIPs returns a list of ips that are now in the ipset (regarding since and expiration)

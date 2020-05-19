@@ -106,6 +106,24 @@ func NewFirewall(config FirewallConfig) (*Firewall, error) {
 	}, nil
 }
 
+// LogAdminPass logs an administrative password
+func (f *Firewall) LogAdminPass() error {
+	// Payload
+	payload := map[string]string{
+		"admin": "true",
+	}
+
+	// Encode cookie
+	encoded, err := f.SecureCookie.Encode(CookieName, payload)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Admin token: %s\n", encoded)
+
+	return nil
+}
+
 // Run the firewall
 func (f *Firewall) Run() error {
 	l := hclog.New(&hclog.LoggerOptions{
@@ -343,6 +361,20 @@ func (f *Firewall) getUserInfo(token string) (*UserInfo, error) {
 }
 
 func (f *Firewall) handleIpset(c echo.Context) error {
+	reqToken := c.Request().Header.Get("Authorization")
+
+	// Read token
+	value := make(map[string]string)
+	if err := f.SecureCookie.Decode(CookieName, reqToken, &value); err == nil {
+		if value["payload"] == "true" {
+			return f.handleIpsetAuthenticated(c)
+		}
+	}
+
+	return c.JSON(http.StatusUnauthorized, nil)
+}
+
+func (f *Firewall) handleIpsetAuthenticated(c echo.Context) error {
 	var result []consulkvipset.IpsetEntry
 
 	// Parse index

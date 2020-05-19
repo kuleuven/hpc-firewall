@@ -24,6 +24,11 @@ func main() {
 				log.Fatal(err)
 			}
 
+			err = f.LogAdminPass()
+			if err != nil {
+				log.Fatal(err)
+			}
+
 			err = f.Run()
 			if err != nil {
 				log.Fatal(err)
