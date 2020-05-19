@@ -5,6 +5,7 @@
     <script src="/static/jquery-3.5.1.min.js"></script>
     <script>
       function refresh() {
+        var failureCount = 0;
         $('div.endpoint').each(function(i, obj) {
           if ($(obj).data('failures') < 3) {
             $.ajax({
@@ -28,8 +29,13 @@
                 withCredentials: true
               }
             });
+          } else {
+            failureCount++;
           }
         });
+        if (failureCount > 1) {
+          location.reload();
+        }
       }
       $(document).ready(function() {
         $('div.endpoint').each(function(i, obj) {
