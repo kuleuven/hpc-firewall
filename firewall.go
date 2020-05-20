@@ -2,12 +2,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"gitea.icts.kuleuven.be/ceif-lnx/go/webapp/framework"
 	"gitea.icts.kuleuven.be/hpc/hpc-firewall/consulkvipset"
@@ -18,6 +20,7 @@ import (
 	echo "github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/oauth2"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -46,6 +49,7 @@ type Firewall struct {
 	FirewallConfig
 	OauthConfig  *oauth2.Config
 	ConsulClient *consul.Client
+	RateLimit    *rate.Limiter
 	HashKey      []byte
 	BlockKey     []byte
 	SecureCookie *securecookie.SecureCookie
@@ -100,6 +104,7 @@ func NewFirewall(config FirewallConfig) (*Firewall, error) {
 		FirewallConfig: config,
 		OauthConfig:    oauthConfig,
 		ConsulClient:   consulClient,
+		RateLimit:      rate.NewLimiter(rate.Every(250*time.Millisecond), 500),
 		HashKey:        hashKeyBytes,
 		BlockKey:       blockKeyBytes,
 		SecureCookie:   s,
@@ -388,6 +393,17 @@ func (f *Firewall) handleIpsetAuthenticated(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// Rate limit
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	err = f.RateLimit.Wait(ctx)
+	if err == context.DeadlineExceeded {
+		return c.JSON(http.StatusTooManyRequests, nil)
+	} else if err != nil {
+		return err
 	}
 
 	// List effective ips
