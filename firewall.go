@@ -300,7 +300,7 @@ func (f *Firewall) handleEndpoint(c echo.Context) error {
 				}
 			}
 		} else {
-			IP = getFFIP(c.Request().Header.Get("X-Forwarded-For"))
+			IP = getFFIP(c.Request().Header.Get("X-LB-Forwarded-For"))
 			valid = true
 		}
 
