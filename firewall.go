@@ -244,10 +244,10 @@ func (f *Firewall) handleRoot(c echo.Context) error {
 
 // RootPayload serves as payload for the root.html template
 type RootPayload struct {
-	ID             string
-	Endpoints      []string
-	AddIPv4Command string
-	AddIPv6Command string
+	ID        string
+	Endpoints []string
+	Bearer    string
+	Endpoint  string
 }
 
 func (f *Firewall) handleRootAuthenticated(c echo.Context, info *UserInfo, payload *CookiePayload) error {
@@ -265,14 +265,13 @@ func (f *Firewall) handleRootAuthenticated(c echo.Context, info *UserInfo, paylo
 		return err
 	}
 
-	command4 := fmt.Sprintf("curl -4 --header \"Authorization: %s\" https://%s/endpoint", encoded, f.Domain)
-	command6 := fmt.Sprintf("curl -6 --header \"Authorization: %s\" https://%s/endpoint", encoded, f.Domain)
+	endpoint := fmt.Sprintf("https://%s/endpoint", f.Domain)
 
 	response := RootPayload{
-		ID:             info.ID,
-		Endpoints:      endpoints,
-		AddIPv4Command: command4,
-		AddIPv6Command: command6,
+		ID:        info.ID,
+		Endpoints: endpoints,
+		Bearer:    encoded,
+		Endpoint:  endpoint,
 	}
 
 	return c.Render(http.StatusOK, "root", response)
@@ -280,7 +279,7 @@ func (f *Firewall) handleRootAuthenticated(c echo.Context, info *UserInfo, paylo
 
 // An EndpointResponse serves as structure for endpoint responses
 type EndpointResponse struct {
-	NeedsRefresh bool   `json:"needs_refresh"`
+	NeedsRefresh bool   `json:"session_expired"`
 	Message      string `json:"message"`
 	IP           string `json:"ip"`
 }
@@ -301,7 +300,7 @@ func (f *Firewall) handleEndpoint(c echo.Context) error {
 				}
 			}
 		} else {
-			IP = getFFIP(c.Request().Header.Get("X-LB-Forwarded-For"))
+			IP = getFFIP(c.Request().Header.Get("X-Forwarded-For"))
 			valid = true
 		}
 
