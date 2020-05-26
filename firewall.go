@@ -176,6 +176,8 @@ func (f *Firewall) checkAuthenticated(c echo.Context) (*UserInfo, *CookiePayload
 
 	// Read cookie
 	if cookie, err := c.Cookie(CookieName); err == nil {
+		payload = &CookiePayload{}
+
 		if err = f.SecureCookie.Decode(CookieName, cookie.Value, payload); err != nil {
 			log.Printf("Decoding cookie resulted in error: %s", err)
 
@@ -188,6 +190,8 @@ func (f *Firewall) checkAuthenticated(c echo.Context) (*UserInfo, *CookiePayload
 	// Read authorization
 	reqToken := c.Request().Header.Get("Authorization")
 	if reqToken != "" {
+		payload = &CookiePayload{}
+
 		if err := f.SecureCookie.Decode(CookieName, reqToken, payload); err != nil {
 			log.Printf("Decoding authorization header resulted in error: %s", err)
 
