@@ -5,6 +5,6 @@ buildGo{
 
 stage("Deploy") {
   build job: '/team-hpc/nomadjobs/hpc-firewall/', wait: false, parameters: [
-  [$class: 'StringParameterValue', name: 'Tier', value: 'production']
+  [$class: 'StringParameterValue', name: 'Tier', value: 'quality']
   ]
 }
