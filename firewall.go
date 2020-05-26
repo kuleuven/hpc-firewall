@@ -152,7 +152,7 @@ func (f *Firewall) Run() error {
 	domains := []string{fmt.Sprintf("https://%s", f.Domain)}
 
 	for _, s := range f.Subdomains {
-		domains = append(domains, fmt.Sprintf("https://%s-%s/endpoint", s, f.Domain))
+		domains = append(domains, fmt.Sprintf("https://%s.%s/endpoint", s, f.Domain))
 	}
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -249,7 +249,7 @@ type RootPayload struct {
 func (f *Firewall) handleRootAuthenticated(c echo.Context, info *UserInfo, payload *CookiePayload) error {
 	endpoints := []string{}
 	for _, s := range f.Subdomains {
-		endpoints = append(endpoints, fmt.Sprintf("https://%s-%s/endpoint", s, f.Domain))
+		endpoints = append(endpoints, fmt.Sprintf("https://%s.%s/endpoint", s, f.Domain))
 	}
 
 	for _, ip := range payload.IPs {
