@@ -111,11 +111,18 @@ func NewFirewall(config FirewallConfig) (*Firewall, error) {
 	}, nil
 }
 
+// A CookiePayload represents the value of a secure cookie
+type CookiePayload struct {
+	Admin bool     `json:"admin"`
+	Token string   `json:"token"`
+	IPs   []string `json:"ips"`
+}
+
 // LogAdminPass logs an administrative password
 func (f *Firewall) LogAdminPass() error {
 	// Payload
-	payload := map[string]string{
-		"admin": "true",
+	payload := &CookiePayload{
+		Admin: true,
 	}
 
 	// Encode cookie
@@ -145,7 +152,7 @@ func (f *Firewall) Run() error {
 	domains := []string{fmt.Sprintf("https://%s", f.Domain)}
 
 	for _, s := range f.Subdomains {
-		domains = append(domains, fmt.Sprintf("https://%s.%s/endpoint", s, f.Domain))
+		domains = append(domains, fmt.Sprintf("https://%s-%s/endpoint", s, f.Domain))
 	}
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -164,30 +171,61 @@ func (f *Firewall) Run() error {
 	return e.Start(":80")
 }
 
-func (f *Firewall) handleRoot(c echo.Context) error {
-	var token string
+func (f *Firewall) checkAuthenticated(c echo.Context) (*UserInfo, *CookiePayload) {
+	var payload *CookiePayload
 
 	// Read cookie
 	if cookie, err := c.Cookie(CookieName); err == nil {
-		value := make(map[string]string)
-		if err = f.SecureCookie.Decode(CookieName, cookie.Value, &value); err == nil {
-			token = value["token"]
-		} else {
+		if err = f.SecureCookie.Decode(CookieName, cookie.Value, payload); err != nil {
 			log.Printf("Decoding cookie resulted in error: %s", err)
+
+			payload = nil
 		}
 	} else {
 		log.Printf("Retrieving cookie resulted in error: %s", err)
 	}
 
+	// Read authorization
+	reqToken := c.Request().Header.Get("Authorization")
+	if reqToken != "" {
+		if err := f.SecureCookie.Decode(CookieName, reqToken, payload); err != nil {
+			log.Printf("Decoding authorization header resulted in error: %s", err)
+
+			payload = nil
+		}
+
+		// Old style
+		value := make(map[string]string)
+		if err := f.SecureCookie.Decode(CookieName, reqToken, &value); err == nil {
+			if value["admin"] == "true" {
+				log.Printf("Using legacy token")
+
+				payload = &CookiePayload{
+					Admin: true,
+				}
+			}
+		}
+	}
+
 	// Check whether token is valid
-	if token != "" {
-		info, err := f.getUserInfo(token)
+	if payload != nil && !payload.Admin && payload.Token != "" {
+		info, err := f.getUserInfo(payload.Token)
 
 		if err == nil {
-			return f.handleRootAuthenticated(c, info)
+			return info, payload
 		}
 
 		log.Printf("Fetching user info resulted in error: %s", err)
+	}
+
+	return nil, payload
+}
+
+func (f *Firewall) handleRoot(c echo.Context) error {
+	info, payload := f.checkAuthenticated(c)
+
+	if info != nil {
+		return f.handleRootAuthenticated(c, info, payload)
 	}
 
 	// Redirect if not valid
@@ -202,21 +240,38 @@ func (f *Firewall) handleRoot(c echo.Context) error {
 
 // RootPayload serves as payload for the root.html template
 type RootPayload struct {
-	ID        string
-	Endpoints []string
+	ID             string
+	Endpoints      []string
+	AddIPv4Command string
+	AddIPv6Command string
 }
 
-func (f *Firewall) handleRootAuthenticated(c echo.Context, info *UserInfo) error {
+func (f *Firewall) handleRootAuthenticated(c echo.Context, info *UserInfo, payload *CookiePayload) error {
 	endpoints := []string{}
 	for _, s := range f.Subdomains {
-		endpoints = append(endpoints, fmt.Sprintf("https://%s.%s/endpoint", s, f.Domain))
+		endpoints = append(endpoints, fmt.Sprintf("https://%s-%s/endpoint", s, f.Domain))
 	}
 
-	payload := RootPayload{
-		ID:        info.ID,
-		Endpoints: endpoints,
+	for _, ip := range payload.IPs {
+		endpoints = append(endpoints, fmt.Sprintf("https://%s/endpoint?ip=%s", f.Domain, ip))
 	}
-	return c.Render(http.StatusOK, "root", payload)
+
+	encoded, err := f.SecureCookie.Encode(CookieName, payload)
+	if err != nil {
+		return err
+	}
+
+	command4 := fmt.Sprintf("curl -4 --header \"Authorization: %s\" https://%s/endpoint", encoded, f.Domain)
+	command6 := fmt.Sprintf("curl -6 --header \"Authorization: %s\" https://%s/endpoint", encoded, f.Domain)
+
+	response := RootPayload{
+		ID:             info.ID,
+		Endpoints:      endpoints,
+		AddIPv4Command: command4,
+		AddIPv6Command: command6,
+	}
+
+	return c.Render(http.StatusOK, "root", response)
 }
 
 // An EndpointResponse serves as structure for endpoint responses
@@ -227,22 +282,27 @@ type EndpointResponse struct {
 }
 
 func (f *Firewall) handleEndpoint(c echo.Context) error {
-	var token string
+	info, payload := f.checkAuthenticated(c)
 
-	// Read cookie
-	if cookie, err := c.Cookie(CookieName); err == nil {
-		value := make(map[string]string)
-		if err = f.SecureCookie.Decode(CookieName, cookie.Value, &value); err == nil {
-			token = value["token"]
+	if info != nil {
+		var (
+			IP    = c.FormValue("ip")
+			valid bool
+		)
+
+		if IP != "" {
+			for _, allowed := range payload.IPs {
+				if allowed == IP {
+					valid = true
+				}
+			}
+		} else {
+			IP = getFFIP(c.Request().Header.Get("X-LB-Forwarded-For"))
+			valid = true
 		}
-	}
 
-	// Check whether token is valid
-	if token != "" {
-		info, err := f.getUserInfo(token)
-
-		if err == nil {
-			return f.handleEndpointAuthenticated(c, info)
+		if valid {
+			return f.handleEndpointAuthenticated(c, info, IP)
 		}
 	}
 
@@ -255,17 +315,15 @@ func (f *Firewall) handleEndpoint(c echo.Context) error {
 	return c.JSON(http.StatusOK, r)
 }
 
-func (f *Firewall) handleEndpointAuthenticated(c echo.Context, info *UserInfo) error {
-	var IP = getFFIP(c.Request().Header.Get("X-LB-Forwarded-For"))
-
-	t, err := consulkvipset.AddIpsetRecord(f.ConsulClient, f.ConsulPath, info.ID, IP)
+func (f *Firewall) handleEndpointAuthenticated(c echo.Context, info *UserInfo, ip string) error {
+	t, err := consulkvipset.AddIpsetRecord(f.ConsulClient, f.ConsulPath, info.ID, ip)
 	if err != nil {
 		return fmt.Errorf("could not add ip to consul kv store: %s", err)
 	}
 
 	// Return response
 	r := &EndpointResponse{
-		IP:      IP,
+		IP:      ip,
 		Message: fmt.Sprintf("IP is granted access since %s [valid until %s]", t.Since.Format("2006-01-02 15:04:05"), t.Expiration.Format("15:04:05")),
 	}
 
@@ -286,8 +344,9 @@ func (f *Firewall) handleOauthCallback(c echo.Context) error {
 	}
 
 	// Cookie payload
-	payload := map[string]string{
-		"token": token,
+	payload := &CookiePayload{
+		Token: token,
+		IPs:   []string{},
 	}
 
 	// Encode cookie
@@ -366,14 +425,10 @@ func (f *Firewall) getUserInfo(token string) (*UserInfo, error) {
 }
 
 func (f *Firewall) handleIpset(c echo.Context) error {
-	reqToken := c.Request().Header.Get("Authorization")
+	_, payload := f.checkAuthenticated(c)
 
-	// Read token
-	value := make(map[string]string)
-	if err := f.SecureCookie.Decode(CookieName, reqToken, &value); err == nil {
-		if value["admin"] == "true" {
-			return f.handleIpsetAuthenticated(c)
-		}
+	if payload != nil && payload.Admin {
+		return f.handleIpsetAuthenticated(c)
 	}
 
 	return c.JSON(http.StatusUnauthorized, nil)

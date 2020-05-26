@@ -89,6 +89,14 @@
                 
                 <p>This page will automatically refresh to extend the access period. Keep this page open while new connections are needed.</p>
   
+                <p class="comment">
+                  To add an ip of a remote server, run
+                  <pre>
+                    {{ .AddIPv4Command }} # for IPv4
+                    {{ .AddIPv6Command }} # for IPv6
+                  </pre>
+                  Repeat each of these commands regularly to keep the firewall open.
+                </p>
               </div>
             </div>
           </div>

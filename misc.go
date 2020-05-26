@@ -6,14 +6,9 @@ import (
 )
 
 func getFFIP(fwdAddress string) string {
-	ip := fwdAddress
-	// If we got an array... grab the first IP
-	ips := strings.Split(fwdAddress, ", ")
-	if len(ips) > 1 {
-		ip = ips[0]
-	}
+	XFFip := strings.Split(fwdAddress, ",")
+	ip := strings.TrimSpace(XFFip[len(XFFip)-1])
 
-	ip = strings.TrimSpace(ip)
 	ip = strings.ReplaceAll(ip, "[", "")
 	ip = strings.ReplaceAll(ip, "]", "")
 
