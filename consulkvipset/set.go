@@ -6,24 +6,61 @@ import (
 	consul "github.com/hashicorp/consul/api"
 )
 
-// A KVIpset represents a consul kv ipset
-type KVIpset struct {
-	kv        *consul.KV
-	path      string
-	Records   []*KVIpsetRecord
-	LastIndex uint64
+// A Ipset represents a consul kv ipset
+type Ipset interface {
+	Records(uint64) ([]Record, uint64, error)
+	IPs(time.Time, uint64) ([]IP, uint64, error)
 }
 
-// NewKVIpset returns a new KVIpset
-func newKVIpset(client *consul.Client, path string) *KVIpset {
-	return &KVIpset{
+type kvIpset struct {
+	kv        *consul.KV
+	path      string
+	records   []*kvRecord
+	lastIndex uint64
+}
+
+// NewIpset returns a new KVIpset
+func NewIpset(client *consul.Client, path string) Ipset {
+	return &kvIpset{
 		kv:   client.KV(),
 		path: path,
 	}
 }
 
-// Read a KVIpset completely
-func (s *KVIpset) read(index uint64) error {
+// Records retrieves all records of a KVIpset
+func (s *kvIpset) Records(index uint64) ([]Record, uint64, error) {
+	err := s.read(index)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	result := []Record{}
+
+	for _, record := range s.records {
+		result = append(result, record)
+	}
+
+	return result, s.lastIndex, nil
+}
+
+// EffectiveIpsetEntries returns a list of ips that are now in the ipset (regarding since and expiration)
+func (s *kvIpset) IPs(now time.Time, index uint64) ([]IP, uint64, error) {
+	err := s.read(index)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var entries = []IP{}
+
+	for _, record := range s.records {
+		e := record.effective(now)
+		entries = append(entries, e...)
+	}
+
+	return entries, s.lastIndex, nil
+}
+
+func (s *kvIpset) read(index uint64) error {
 	queryoptions := &consul.QueryOptions{}
 
 	if index != 0 {
@@ -35,12 +72,12 @@ func (s *KVIpset) read(index uint64) error {
 		return err
 	}
 
-	newRecords := []*KVIpsetRecord{}
+	newRecords := []*kvRecord{}
 
-	var record *KVIpsetRecord
+	var record *kvRecord
 
 	for _, pair := range pairs {
-		record = &KVIpsetRecord{
+		record = &kvRecord{
 			kv:   s.kv,
 			path: pair.Key,
 		}
@@ -53,26 +90,8 @@ func (s *KVIpset) read(index uint64) error {
 		newRecords = append(newRecords, record)
 	}
 
-	s.Records = newRecords
-	s.LastIndex = meta.LastIndex
+	s.records = newRecords
+	s.lastIndex = meta.LastIndex
 
 	return nil
-}
-
-// EffectiveIPs returns a list of ips that are now in the ipset (regarding since and expiration)
-func (s *KVIpset) effectiveIPs(now time.Time) ([]IpsetEntry, error) {
-	var (
-		entries = []IpsetEntry{}
-	)
-
-	for _, record := range s.Records {
-		e, err := record.effectiveIPs(now)
-		if err != nil {
-			return nil, err
-		}
-
-		entries = append(entries, e...)
-	}
-
-	return entries, nil
 }

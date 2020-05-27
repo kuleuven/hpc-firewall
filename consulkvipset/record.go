@@ -11,38 +11,89 @@ import (
 )
 
 const (
-	// IpsetTimeout specifies the expiration of the ipset entry
-	IpsetTimeout = 5 * time.Minute
-	// IpsetMaxTimeout specifies max ipset timeout of values from consul
-	IpsetMaxTimeout uint = 86400
+	// Retries specifies the maximum retries of the AddConsulIpsetRecord function to put a value in the kv store
+	Retries = 10
 )
 
-// A KVIpsetRecord represents a collection of addresses in the consul kv store to be used for an ipset
-type KVIpsetRecord struct {
+// A Record represents a consul kv ipset record
+type Record interface {
+	IPs(time.Time, uint64) ([]IP, uint64, error)
+	Add(net.IP) (IP, error)
+}
+
+type kvRecord struct {
 	kv        *consul.KV
 	path      string
-	Addresses []KVIpsetAddress
-	Index     uint64
+	addresses []*kvIP
+	index     uint64
 }
 
-// A KVIpsetAddress represents an IP in the consul kv store to be used for an ipset
-type KVIpsetAddress struct {
-	Since      time.Time `json:"since"`
-	Expiration time.Time `json:"expiration"`
-	IP         string    `json:"ip"`
-}
-
-// NewKVIpsetRecord returns a new KVIpsetRecord
-func newKVIpsetRecord(client *consul.Client, path string) *KVIpsetRecord {
-	return &KVIpsetRecord{
+// NewRecord returns a new Record
+func NewRecord(client *consul.Client, path string, label string) Record {
+	return &kvRecord{
 		kv:   client.KV(),
-		path: path,
+		path: path + "/" + label,
 	}
 }
 
-// Read ipset record
-func (r *KVIpsetRecord) read() error {
-	pair, _, err := r.kv.Get(r.path, nil)
+// IPs returns a list of addresses that are currently valid
+func (r *kvRecord) IPs(now time.Time, index uint64) ([]IP, uint64, error) {
+	err := r.read(index)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var entries = []IP{}
+
+	for _, address := range r.addresses {
+		expires := address.expiration
+		starts := address.since
+
+		if (expires.IsZero() || now.Before(expires)) && (starts.IsZero() || now.After(starts)) {
+			entries = append(entries, address)
+		}
+	}
+
+	return entries, r.index, nil
+}
+
+// Add an ip to the record
+func (r *kvRecord) Add(ip net.IP) (IP, error) {
+	var (
+		err     error
+		address IP
+		success bool
+	)
+
+	for i := 0; i < Retries; i++ {
+		err = r.read(0)
+		if err != nil {
+			return nil, err
+		}
+
+		address = r.add(ip)
+
+		success, err = r.write()
+		if err != nil {
+			return nil, err
+		}
+
+		if success {
+			return address, nil
+		}
+	}
+
+	return nil, fmt.Errorf("tried %d times, retry limit exceeded", Retries)
+}
+
+func (r *kvRecord) read(index uint64) error {
+	queryoptions := &consul.QueryOptions{}
+
+	if index != 0 {
+		queryoptions.WaitIndex = index
+	}
+
+	pair, _, err := r.kv.Get(r.path, queryoptions)
 	if err != nil {
 		return fmt.Errorf("could not get key: %s", err)
 	}
@@ -50,108 +101,69 @@ func (r *KVIpsetRecord) read() error {
 	return r.readData(pair)
 }
 
-func (r *KVIpsetRecord) readData(pair *consul.KVPair) error {
+func (r *kvRecord) readData(pair *consul.KVPair) error {
 	if pair == nil {
-		r.Addresses = []KVIpsetAddress{}
-		r.Index = 0
+		r.addresses = []*kvIP{}
+		r.index = 0
 	} else {
-		r.Index = pair.ModifyIndex
+		r.index = pair.ModifyIndex
 
-		if err := json.Unmarshal(pair.Value, &r.Addresses); err != nil {
+		if err := json.Unmarshal(pair.Value, &r.addresses); err != nil {
 			log.Printf("could not parse current value: %s", err)
-			r.Addresses = []KVIpsetAddress{}
+			r.addresses = []*kvIP{}
 		}
 	}
 
 	return nil
 }
 
-// An IpsetEntry describes an entry to be added to some ipset
-type IpsetEntry struct {
-	Addr    string `json:"ip"`
-	Timeout uint   `json:"timeout"`
-	Comment string `json:"comment"`
-}
+func (r *kvRecord) effective(now time.Time) []IP {
+	entries := []IP{}
 
-// EffectiveIPs returns a list of ips that are now in the ipset (regarding since and expiration)
-func (r *KVIpsetRecord) effectiveIPs(now time.Time) ([]IpsetEntry, error) {
-	var (
-		entries = []IpsetEntry{}
-	)
-
-	for _, address := range r.Addresses {
-		expires := address.Expiration
-		starts := address.Since
+	for _, address := range r.addresses {
+		expires := address.expiration
+		starts := address.since
 
 		if (expires.IsZero() || now.Before(expires)) && (starts.IsZero() || now.After(starts)) {
-			var timeout uint
-
-			if expires.IsZero() {
-				timeout = IpsetMaxTimeout
-			} else {
-				timeout = uint(expires.Sub(now).Seconds())
-				if timeout > IpsetMaxTimeout {
-					timeout = IpsetMaxTimeout
-				} else if timeout == 0 {
-					continue
-				}
-			}
-
-			addr := net.ParseIP(address.IP)
-
-			if addr == nil {
-				return nil, fmt.Errorf("invalid address %s", address.IP)
-			}
-
-			entries = append(entries, IpsetEntry{
-				Addr:    addr.String(),
-				Timeout: timeout,
-				Comment: r.path,
-			})
+			entries = append(entries, address)
 		}
 	}
 
-	return entries, nil
+	return entries
 }
 
-// Add an ip to the ipset in memory
-func (r *KVIpsetRecord) add(ip string) (*KVIpsetAddress, error) {
-	// validate address
-	if addr := net.ParseIP(ip); addr == nil {
-		return nil, fmt.Errorf("invalid address: %s", ip)
-	}
-
+func (r *kvRecord) add(ip net.IP) IP {
 	var (
-		now     = time.Now()
-		address = KVIpsetAddress{
-			Since:      now,
-			Expiration: now.Add(IpsetTimeout),
-			IP:         ip,
-		}
+		now          = time.Now()
+		newAddresses = []*kvIP{}
 	)
 
-	newAddresses := []KVIpsetAddress{}
+	a := newIP(ip, now, r.path)
 
-	for _, a := range r.Addresses {
-		if now.Before(a.Expiration) {
-			if a.IP == address.IP {
-				address.Since = a.Since
+	aIP := a.IP()
+
+	for _, b := range r.addresses {
+		if now.Before(a.Expiration()) {
+			if b.IP().Equal(aIP) {
+				if b.since.Before(a.since) {
+					a.since = b.since
+				}
 			} else {
-				newAddresses = append(newAddresses, a)
+				newAddresses = append(newAddresses, b)
 			}
 		}
 	}
 
-	newAddresses = append(newAddresses, address)
+	newAddresses = append(newAddresses, a)
 
-	r.Addresses = newAddresses
+	r.addresses = newAddresses
 
-	return &address, nil
+	return a
 }
 
 // Write ipset back using CAS
-func (r *KVIpsetRecord) write() (bool, error) {
-	data, err := json.Marshal(r.Addresses)
+func (r *kvRecord) write() (bool, error) {
+	data, err := json.Marshal(r.addresses)
 	if err != nil {
 		return false, fmt.Errorf("could not format as json: %s", err)
 	}
@@ -159,7 +171,7 @@ func (r *KVIpsetRecord) write() (bool, error) {
 	pair := &consul.KVPair{
 		Key:         r.path,
 		Value:       data,
-		ModifyIndex: r.Index,
+		ModifyIndex: r.index,
 	}
 
 	var success bool

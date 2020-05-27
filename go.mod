@@ -6,6 +6,7 @@ require (
 	gitea.icts.kuleuven.be/ceif-lnx/go/webapp v0.0.0-20200427102449-ebc8e5ee9a1d
 	github.com/42wim/ipsetd v0.0.0-20200509190103-ce19b12d6588 // indirect
 	github.com/GeertJohan/go.rice v1.0.0
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gorilla/securecookie v1.1.1
 	github.com/hashicorp/consul/api v1.4.0
 	github.com/hashicorp/go-hclog v0.12.1
