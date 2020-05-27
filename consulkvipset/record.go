@@ -121,6 +121,10 @@ func (r *kvRecord) effective(now time.Time) []IP {
 	entries := []IP{}
 
 	for _, address := range r.addresses {
+		if address.addr == nil {
+			continue
+		}
+
 		expires := address.expiration
 		starts := address.since
 
@@ -143,6 +147,10 @@ func (r *kvRecord) add(ip net.IP) IP {
 	aIP := a.IP()
 
 	for _, b := range r.addresses {
+		if b.addr == nil {
+			continue
+		}
+
 		if now.Before(a.Expiration()) {
 			if b.IP().Equal(aIP) {
 				if b.since.Before(a.since) {

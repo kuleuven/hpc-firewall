@@ -1,6 +1,7 @@
 package consulkvipset
 
 import (
+	"encoding/json"
 	"net"
 	"time"
 )
@@ -23,15 +24,15 @@ type IP interface {
 }
 
 type kvIP struct {
-	addr       string    `json:"ip"`
-	since      time.Time `json:"since"`
-	expiration time.Time `json:"expiration"`
-	comment    string    `json:"comment"`
+	addr       net.IP
+	since      time.Time
+	expiration time.Time
+	comment    string
 }
 
 func newIP(ip net.IP, now time.Time, comment string) *kvIP {
 	return &kvIP{
-		addr:       ip.String(),
+		addr:       ip,
 		since:      now,
 		expiration: now.Add(IpsetTimeout),
 		comment:    comment,
@@ -40,7 +41,7 @@ func newIP(ip net.IP, now time.Time, comment string) *kvIP {
 
 // IP of IP
 func (a *kvIP) IP() net.IP {
-	return net.ParseIP(a.addr)
+	return a.addr
 }
 
 // Since represents the start date the ip was active
@@ -74,6 +75,39 @@ func (a *kvIP) Timeout(now time.Time) time.Duration {
 // Comment represents a string
 func (a *kvIP) Comment() string {
 	return a.comment
+}
+
+type ipJSON struct {
+	Addr       string    `json:"ip"`
+	Since      time.Time `json:"since"`
+	Expiration time.Time `json:"expiration"`
+	Comment    string    `json:"comment"`
+}
+
+// Implement json.Unmarshaller
+func (a *kvIP) UnmarshalJSON(b []byte) error {
+	d := ipJSON{}
+
+	if err := json.Unmarshal(b, &d); err != nil {
+		return err
+	}
+
+	a.addr = net.ParseIP(d.Addr)
+	a.since = d.Since
+	a.expiration = d.Expiration
+	a.comment = d.Comment
+
+	return nil
+}
+
+// Implement json.Marshaller
+func (a *kvIP) MarshalJSON() ([]byte, error) {
+	return json.Marshal(ipJSON{
+		Addr:       a.addr.String(),
+		Since:      a.since,
+		Expiration: a.expiration,
+		Comment:    a.comment,
+	})
 }
 
 // An IpsetEntry describes an entry to be added to some ipset
