@@ -131,7 +131,7 @@ func (r *kvRecord) effective(now time.Time) []IP {
 		expires := address.expiration
 		starts := address.since
 
-		if (expires.IsZero() || now.Before(expires)) && (starts.IsZero() || now.After(starts.Add(-1*time.Second))) {
+		if (expires.IsZero() || now.Before(expires)) && (starts.IsZero() || now.Add(3*time.Second).After(starts)) {
 			entries = append(entries, address)
 		}
 	}
