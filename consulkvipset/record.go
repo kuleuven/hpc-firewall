@@ -26,6 +26,7 @@ type kvRecord struct {
 	path      string
 	addresses []*kvIP
 	index     uint64
+	lastIndex uint64
 }
 
 // NewRecord returns a new Record
@@ -54,7 +55,7 @@ func (r *kvRecord) IPs(now time.Time, index uint64) ([]IP, uint64, error) {
 		}
 	}
 
-	return entries, r.index, nil
+	return entries, r.lastIndex, nil
 }
 
 // Add an ip to the record
@@ -93,10 +94,12 @@ func (r *kvRecord) read(index uint64) error {
 		queryoptions.WaitIndex = index
 	}
 
-	pair, _, err := r.kv.Get(r.path, queryoptions)
+	pair, meta, err := r.kv.Get(r.path, queryoptions)
 	if err != nil {
 		return fmt.Errorf("could not get key: %s", err)
 	}
+
+	r.lastIndex = meta.LastIndex
 
 	return r.readData(pair)
 }
