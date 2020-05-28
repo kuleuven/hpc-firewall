@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 
@@ -63,6 +64,10 @@ func (f *Firewall) handleListAuthenticated(c echo.Context, info *UserInfo) error
 	if err != nil {
 		return err
 	}
+
+	sort.SliceStable(ts, func(i, j int) bool {
+		return ts[i].IP().String() < ts[j].IP().String()
+	})
 
 	r := &ListResponse{
 		IPs:       []*ListIP{},
