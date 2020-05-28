@@ -27,7 +27,17 @@
             var html = "";
             for(var i = 0; i < data.records.length; i++) {
               var record = data.records[i];
-              html += "<div class=\"ip\" data-lifetime=\"" + record.lifetime + "\"><strong>" + record.ip + "</strong> " + record.message + "</div>\n";
+
+              var found = false;
+              $('div.endpoint').each(function(i,obj) {
+                found = found || $(obj).data('ip') == record.ip;
+              });
+
+              if (found) {
+                record.message += " (will be refreshed)"
+              }
+
+              html += "<div class=\"ip\" data-ip=\"" + record.ip + "\" data-lifetime=\"" + record.lifetime + "\"><strong>" + record.ip + "</strong> " + record.message + ".</div>\n";
             }
 
             $(obj).html(html);
@@ -67,6 +77,7 @@
                 }
 
                 $(obj).html("<strong>" + data.ip + "</strong> " + data.message);
+                $(obj).data('ip', data.ip);
                 $(obj).data('failures', 0);
               },
               error: function() {
@@ -129,7 +140,7 @@
                 <div class="list" data-url="{{ .ListURL }}" data-index="0"></div>
 
                 {{ range .AddURLSubdomains }}
-                <div class="endpoint" data-url="{{ . }}" data-failures="0" style="display: none"></div> 
+                <div class="endpoint" data-url="{{ . }}" data-ip="" data-failures="0" style="display: none"></div>
                 {{ end }}
                 
                 <p>This page will automatically refresh to extend the access period. Keep this page open while new connections are needed.</p>

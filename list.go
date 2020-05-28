@@ -80,7 +80,7 @@ func (f *Firewall) handleListAuthenticated(c echo.Context, info *UserInfo) error
 			Since:    t.Since().Format("2006-01-02 15:04:05"),
 			Until:    t.Expiration().Format("15:04:05"),
 			Lifetime: uint(t.Expiration().Sub(now).Seconds()),
-			Message:  fmt.Sprintf("IP is granted access since %s [valid until %s]", t.Since().Format("2006-01-02 15:04:05"), t.Expiration().Format("15:04:05")),
+			Message:  fmt.Sprintf("is granted access since %s, valid until %s", t.Since().Format("2006-01-02 15:04:05"), t.Expiration().Format("15:04:05")),
 		})
 	}
 
