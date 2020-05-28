@@ -27,7 +27,7 @@
             var html = "";
             for(var i = 0; i < data.records.length; i++) {
               var record = data.records[i];
-              html += "<div class=\"ip\"><strong>" + record.ip + "</strong> " + record.message + "</div>\n";
+              html += "<div class=\"ip\" data-lifetime=\"" + record.lifetime + "\"><strong>" + record.ip + "</strong> " + record.message + "</div>\n";
             }
 
             $(obj).html(html);
@@ -39,6 +39,16 @@
           },
           xhrFields: {
             withCredentials: true
+          }
+        });
+      }
+      function ticker() {
+        $('div.list div.ip').each(function(i, obj) {
+          var lifetime = $(obj).data('lifetime') - 1;
+          if (lifetime > 0) {
+            $(obj).data('lifetime', lifetime);
+          } else {
+            $(obj).remove();
           }
         });
       }
@@ -82,6 +92,7 @@
         $('div.list').each(function(i, obj) {
           refreshlist(obj);
         });
+        setInterval(ticker, 1000);
       });
     </script>
   </head>

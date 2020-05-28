@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"gitea.icts.kuleuven.be/hpc/hpc-firewall/consulkvipset"
 	echo "github.com/labstack/echo/v4"
@@ -18,8 +19,11 @@ type ListResponse struct {
 
 // A ListIP represents a single ip
 type ListIP struct {
-	IP      string `json:"ip"`
-	Message string `json:"message"`
+	IP       string `json:"ip"`
+	Since    string `json:"since"`
+	Until    string `json:"until"`
+	Lifetime uint   `json:"lifetime"`
+	Message  string `json:"message"`
 }
 
 func (f *Firewall) handleList(c echo.Context) error {
@@ -44,6 +48,7 @@ func (f *Firewall) handleListAuthenticated(c echo.Context, info *UserInfo) error
 		index      uint64
 		err        error
 		ts         []consulkvipset.IP
+		now        time.Time
 	)
 
 	// Parse index
@@ -54,7 +59,7 @@ func (f *Firewall) handleListAuthenticated(c echo.Context, info *UserInfo) error
 		}
 	}
 
-	ts, _, index, err = record.IPs(index)
+	ts, now, index, err = record.IPs(index)
 	if err != nil {
 		return err
 	}
@@ -66,8 +71,11 @@ func (f *Firewall) handleListAuthenticated(c echo.Context, info *UserInfo) error
 
 	for _, t := range ts {
 		r.IPs = append(r.IPs, &ListIP{
-			IP:      t.IP().String(),
-			Message: fmt.Sprintf("IP is granted access since %s [valid until %s]", t.Since().Format("2006-01-02 15:04:05"), t.Expiration().Format("15:04:05")),
+			IP:       t.IP().String(),
+			Since:    t.Since().Format("2006-01-02 15:04:05"),
+			Until:    t.Expiration().Format("15:04:05"),
+			Lifetime: uint(t.Expiration().Sub(now).Seconds()),
+			Message:  fmt.Sprintf("IP is granted access since %s [valid until %s]", t.Since().Format("2006-01-02 15:04:05"), t.Expiration().Format("15:04:05")),
 		})
 	}
 
