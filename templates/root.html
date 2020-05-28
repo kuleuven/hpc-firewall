@@ -146,7 +146,7 @@
                 <p>This page will automatically refresh to extend the access period. Keep this page open while new connections are needed.</p>
   
                 <p class="comment">
-                  To add an ip of a remote server, run (and repeat regularly as needed)
+                  To add additionally an ip of a remote server, run the following commands on that server (and repeat them as needed):
                   <pre>
 BEARER={{ .Bearer }}
 curl -4 --header "Authorization: $BEARER" {{ .AddURL }}
