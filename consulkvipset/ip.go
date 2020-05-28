@@ -112,9 +112,9 @@ func (a *kvIP) MarshalJSON() ([]byte, error) {
 
 // An IpsetEntry describes an entry to be added to some ipset
 type IpsetEntry struct {
-	IP      net.IP        `json:"ip"`
-	Timeout time.Duration `json:"timeout"`
-	Comment string        `json:"comment"`
+	IP      net.IP `json:"ip"`
+	Timeout int    `json:"timeout"`
+	Comment string `json:"comment"`
 }
 
 // ToIpsetEntries converts a list of ips to ipset entries, calculating timeout values
@@ -124,7 +124,7 @@ func ToIpsetEntries(ips []IP, now time.Time) ([]IpsetEntry, error) {
 	for _, address := range ips {
 		entries = append(entries, IpsetEntry{
 			IP:      address.IP(),
-			Timeout: address.Timeout(now),
+			Timeout: int(address.Timeout(now).Seconds()),
 			Comment: address.Comment(),
 		})
 	}
