@@ -26,10 +26,11 @@ func (f *Firewall) handleRoot(c echo.Context) error {
 
 // RootPayload serves as payload for the root.html template
 type RootPayload struct {
-	ID        string
-	Endpoints []string
-	Bearer    string
-	Endpoint  string
+	ID               string
+	Bearer           string
+	AddURL           string
+	ListURL          string
+	AddURLSubdomains []string
 }
 
 func (f *Firewall) handleRootAuthenticated(c echo.Context, info *UserInfo, payload *CookiePayload) error {
@@ -43,13 +44,12 @@ func (f *Firewall) handleRootAuthenticated(c echo.Context, info *UserInfo, paylo
 		return err
 	}
 
-	endpoint := fmt.Sprintf("https://%s/add", f.Domain)
-
 	response := RootPayload{
-		ID:        info.ID,
-		Endpoints: endpoints,
-		Bearer:    encoded,
-		Endpoint:  endpoint,
+		ID:               info.ID,
+		ListURL:          fmt.Sprintf("https://%s/list", f.Domain),
+		AddURL:           fmt.Sprintf("https://%s/add", f.Domain),
+		AddURLSubdomains: endpoints,
+		Bearer:           encoded,
 	}
 
 	return c.Render(http.StatusOK, "root", response)
