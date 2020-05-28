@@ -112,7 +112,7 @@ func (a *kvIP) MarshalJSON() ([]byte, error) {
 
 // An IpsetEntry describes an entry to be added to some ipset
 type IpsetEntry struct {
-	net.IP
+	IP      net.IP        `json:"ip"`
 	Timeout time.Duration `json:"timeout"`
 	Comment string        `json:"comment"`
 }
