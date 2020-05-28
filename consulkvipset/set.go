@@ -9,7 +9,8 @@ import (
 // A Ipset represents a consul kv ipset
 type Ipset interface {
 	Records(uint64) ([]Record, uint64, error)
-	IPs(time.Time, uint64) ([]IP, uint64, error)
+	IPs(uint64) ([]IP, time.Time, uint64, error)
+	IPsAtTime(time.Time, uint64) ([]IP, uint64, error)
 }
 
 type kvIpset struct {
@@ -43,8 +44,27 @@ func (s *kvIpset) Records(index uint64) ([]Record, uint64, error) {
 	return result, s.lastIndex, nil
 }
 
-// EffectiveIpsetEntries returns a list of ips that are now in the ipset (regarding since and expiration)
-func (s *kvIpset) IPs(now time.Time, index uint64) ([]IP, uint64, error) {
+// IPs returns a list of ips that are now in the ipset (regarding since and expiration)
+func (s *kvIpset) IPs(index uint64) ([]IP, time.Time, uint64, error) {
+	err := s.read(index)
+	if err != nil {
+		return nil, time.Time{}, 0, err
+	}
+
+	now := time.Now()
+
+	var entries = []IP{}
+
+	for _, record := range s.records {
+		e := record.effective(now)
+		entries = append(entries, e...)
+	}
+
+	return entries, now, s.lastIndex, nil
+}
+
+// IPsAtTime returns a list of ips that are in the ipset at a given time (regarding since and expiration)
+func (s *kvIpset) IPsAtTime(now time.Time, index uint64) ([]IP, uint64, error) {
 	err := s.read(index)
 	if err != nil {
 		return nil, 0, err

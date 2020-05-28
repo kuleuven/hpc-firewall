@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"gitea.icts.kuleuven.be/hpc/hpc-firewall/consulkvipset"
 	echo "github.com/labstack/echo/v4"
@@ -55,7 +54,7 @@ func (f *Firewall) handleListAuthenticated(c echo.Context, info *UserInfo) error
 		}
 	}
 
-	ts, index, err = record.IPs(time.Now(), index)
+	ts, _, index, err = record.IPs(index)
 	if err != nil {
 		return err
 	}

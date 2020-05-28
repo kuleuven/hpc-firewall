@@ -17,7 +17,8 @@ const (
 
 // A Record represents a consul kv ipset record
 type Record interface {
-	IPs(time.Time, uint64) ([]IP, uint64, error)
+	IPs(uint64) ([]IP, time.Time, uint64, error)
+	IPsAtTime(time.Time, uint64) ([]IP, uint64, error)
 	Add(net.IP) (IP, error)
 }
 
@@ -38,24 +39,25 @@ func NewRecord(client *consul.Client, path string, label string) Record {
 }
 
 // IPs returns a list of addresses that are currently valid
-func (r *kvRecord) IPs(now time.Time, index uint64) ([]IP, uint64, error) {
+func (r *kvRecord) IPs(index uint64) ([]IP, time.Time, uint64, error) {
+	err := r.read(index)
+	if err != nil {
+		return nil, time.Time{}, 0, err
+	}
+
+	now := time.Now()
+
+	return r.effective(now), now, r.lastIndex, nil
+}
+
+// IPsAtTime returns a list of addresses that are valid at a given time
+func (r *kvRecord) IPsAtTime(now time.Time, index uint64) ([]IP, uint64, error) {
 	err := r.read(index)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	var entries = []IP{}
-
-	for _, address := range r.addresses {
-		expires := address.expiration
-		starts := address.since
-
-		if (expires.IsZero() || now.Before(expires)) && (starts.IsZero() || now.After(starts)) {
-			entries = append(entries, address)
-		}
-	}
-
-	return entries, r.lastIndex, nil
+	return r.effective(now), r.lastIndex, nil
 }
 
 // Add an ip to the record
@@ -131,7 +133,7 @@ func (r *kvRecord) effective(now time.Time) []IP {
 		expires := address.expiration
 		starts := address.since
 
-		if (expires.IsZero() || now.Before(expires)) && (starts.IsZero() || now.Add(3*time.Second).After(starts)) {
+		if (expires.IsZero() || now.Before(expires)) && (starts.IsZero() || now.Add(time.Second).After(starts)) {
 			entries = append(entries, address)
 		}
 	}

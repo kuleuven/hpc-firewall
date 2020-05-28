@@ -26,11 +26,11 @@ func ListEffectiveIPs(client *consul.Client, path string, index uint64) ([]Ipset
 		ips     []IP
 		entries []IpsetEntry
 		err     error
-		now     = time.Now()
+		now     time.Time
 		s       = NewIpset(client, path)
 	)
 
-	ips, index, err = s.IPs(now, index)
+	ips, now, index, err = s.IPs(index)
 
 	if err != nil {
 		return nil, index, err
