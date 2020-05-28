@@ -151,7 +151,7 @@ func (r *kvRecord) add(ip net.IP) IP {
 			continue
 		}
 
-		if now.Before(a.Expiration()) {
+		if now.Before(b.Expiration()) {
 			if b.IP().Equal(aIP) {
 				if b.since.Before(a.since) {
 					a.since = b.since
