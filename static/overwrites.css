@@ -171,6 +171,10 @@ div.pubkey-panel>.pubkey-body {
   width: 100% !important;
 }
 
+div.list {
+  margin-bottom: 26px;
+}
+
 div.endpoint:last-of-type {
   margin-bottom: 26px;
 }

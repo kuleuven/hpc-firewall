@@ -24,11 +24,13 @@
               return;
             }
 
+            var html = "";
             for(var i = 0; i < data.records.length; i++) {
               var record = data.records[i];
-              console.log(record.ip)
+              html += "<div class=\"ip\"><strong>" + record.ip + "</strong> " + record.message + "</div>\n";
             }
-            
+
+            $(obj).html(html);
             $(obj).data('index', data.last_index);
             refreshlist(obj);
           },
