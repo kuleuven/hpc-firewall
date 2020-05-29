@@ -119,14 +119,21 @@ type IpsetEntry struct {
 
 // ToIpsetEntries converts a list of ips to ipset entries, calculating timeout values
 func ToIpsetEntries(ips []IP, now time.Time) ([]IpsetEntry, error) {
-	var entries = []IpsetEntry{}
+	var (
+		entries = []IpsetEntry{}
+		timeout int
+	)
 
 	for _, address := range ips {
-		entries = append(entries, IpsetEntry{
-			IP:      address.IP(),
-			Timeout: int(address.Timeout(now).Seconds()),
-			Comment: address.Comment(),
-		})
+		timeout = int(address.Timeout(now).Seconds())
+
+		if timeout > 0 {
+			entries = append(entries, IpsetEntry{
+				IP:      address.IP(),
+				Timeout: timeout,
+				Comment: address.Comment(),
+			})
+		}
 	}
 
 	return entries, nil
