@@ -95,6 +95,8 @@ func NewFirewall(config FirewallConfig) (*Firewall, error) {
 	// SecureCookie
 	s := securecookie.New(hashKeyBytes, blockKeyBytes)
 
+	s.MaxAge(0)
+
 	return &Firewall{
 		FirewallConfig: config,
 		OauthConfig:    oauthConfig,
@@ -114,18 +116,21 @@ type CookiePayload struct {
 
 // LogAdminPass logs an administrative password
 func (f *Firewall) LogAdminPass() error {
-	// Payload
-	payload := &CookiePayload{
-		Admin: true,
-	}
+	for i := 1; i < 6; i++ {
+		// Payload
+		payload := &CookiePayload{
+			Admin: true,
+			Token: fmt.Sprintf("admin%d", i),
+		}
 
-	// Encode cookie
-	encoded, err := f.SecureCookie.Encode(CookieName, payload)
-	if err != nil {
-		return err
-	}
+		// Encode cookie
+		encoded, err := f.SecureCookie.Encode(CookieName, payload)
+		if err != nil {
+			return err
+		}
 
-	log.Printf("Admin token: %s\n", encoded)
+		log.Printf("Admin token %d: %s\n", i, encoded)
+	}
 
 	return nil
 }
