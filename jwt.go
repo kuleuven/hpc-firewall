@@ -9,57 +9,8 @@ import (
 	echo "github.com/labstack/echo/v4"
 )
 
-var (
-	// ErrInvalidToken error
-	ErrInvalidToken = fmt.Errorf("invalid token")
-)
-
-// AddIPClaim represents a jwt token to request adding of an IP
-type AddIPClaim struct {
-	IP string
-	jwt.StandardClaims
-}
-
-// NewAddIPToken generates a new jwt token to add an ip
-func (f *Firewall) NewAddIPToken(ip string) (string, error) {
-	expirationTime := time.Now().Add(5 * time.Minute)
-
-	// Create the JWT claims, which includes the username and expiry time
-	claims := &AddIPClaim{
-		IP: ip,
-		StandardClaims: jwt.StandardClaims{
-			// In JWT, the expiry time is expressed as unix milliseconds
-			ExpiresAt: expirationTime.Unix(),
-		},
-	}
-
-	// Declare the token with the algorithm used for signing, and the claims
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	return token.SignedString(f.AddIPSecret)
-}
-
-// ParseAddIPToken parses a jwt token
-func (f *Firewall) ParseAddIPToken(tknStr string) (*AddIPClaim, error) {
-	claims := &AddIPClaim{}
-
-	// Parse the JWT string and store the result in `claims`.
-	// Note that we are passing the key in this method as well. This method will return an error
-	// if the token is invalid (if it has expired according to the expiry time we set on sign in),
-	// or if the signature does not match
-	tkn, err := jwt.ParseWithClaims(tknStr, claims, func(token *jwt.Token) (interface{}, error) {
-		return f.AddIPSecret, nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-	if !tkn.Valid {
-		return nil, ErrInvalidToken
-	}
-
-	return claims, nil
-}
+// ErrInvalidToken error
+var ErrInvalidToken = fmt.Errorf("invalid token")
 
 // OauthSessionClaim represents a jwt token to prove an authentication request is made
 type OauthSessionClaim struct {
@@ -95,7 +46,6 @@ func (f *Firewall) ParseOauthSessionToken(tknStr string) (*OauthSessionClaim, er
 	tkn, err := jwt.ParseWithClaims(tknStr, claims, func(token *jwt.Token) (interface{}, error) {
 		return f.BlockKey, nil
 	})
-
 	if err != nil {
 		return nil, err
 	}

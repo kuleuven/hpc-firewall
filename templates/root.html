@@ -67,7 +67,10 @@
         $('div.endpoint').each(function(i, obj) {
           if ($(obj).data('failures') < 3) {
             $.ajax({
-              url: $(obj).data('url'), 
+              url: $(obj).data('url'),
+              beforeSend: function(xhr) {
+                xhr.setRequestHeader('Authorization', $(obj).data('token'));
+              },
               data: {},
               dataType: 'json',
               success: function(data) {
@@ -139,8 +142,9 @@
 
                 <div class="list" data-url="{{ .ListURL }}" data-index="0"></div>
 
+                {{ $t := .Bearer }}
                 {{ range .AddURLSubdomains }}
-                <div class="endpoint" data-url="{{ . }}" data-ip="" data-failures="0" style="display: none"></div>
+                <div class="endpoint" data-url="{{ . }}" data-ip="" data-failures="0" data-token="{{ $t }}" style="display: none"></div>
                 {{ end }}
                 
                 <p>This page will automatically refresh to extend the access period. Keep this page open while new connections are needed.</p>

@@ -35,7 +35,6 @@ type FirewallConfig struct {
 	ConsulPath        string
 	HashKey           string
 	BlockKey          string
-	AddIPSecret       string
 	Domain            string
 	Subdomains        []string
 }
@@ -48,7 +47,6 @@ type Firewall struct {
 	RateLimit    *rate.Limiter
 	HashKey      []byte
 	BlockKey     []byte
-	AddIPSecret  []byte
 	SecureCookie *securecookie.SecureCookie
 }
 
@@ -106,7 +104,6 @@ func NewFirewall(config FirewallConfig) (*Firewall, error) {
 		RateLimit:      rate.NewLimiter(rate.Every(250*time.Millisecond), 500),
 		HashKey:        hashKeyBytes,
 		BlockKey:       blockKeyBytes,
-		AddIPSecret:    []byte(config.AddIPSecret),
 		SecureCookie:   s,
 	}, nil
 }
