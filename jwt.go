@@ -36,7 +36,7 @@ func (f *Firewall) NewAddIPToken(ip string) (string, error) {
 	// Declare the token with the algorithm used for signing, and the claims
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	return token.SignedString(f.BlockKey)
+	return token.SignedString(f.AddIPSecret)
 }
 
 // ParseAddIPToken parses a jwt token
@@ -48,7 +48,7 @@ func (f *Firewall) ParseAddIPToken(tknStr string) (*AddIPClaim, error) {
 	// if the token is invalid (if it has expired according to the expiry time we set on sign in),
 	// or if the signature does not match
 	tkn, err := jwt.ParseWithClaims(tknStr, claims, func(token *jwt.Token) (interface{}, error) {
-		return f.BlockKey, nil
+		return f.AddIPSecret, nil
 	})
 
 	if err != nil {

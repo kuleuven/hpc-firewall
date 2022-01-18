@@ -34,6 +34,15 @@ func (f *Firewall) handleAdd(c echo.Context) error {
 func (f *Firewall) handleAddAuthenticated(c echo.Context, info *UserInfo) error {
 	var ip = getFFIP(c.Request().Header.Get("X-LB-Forwarded-For"))
 
+	if token := c.Param("token"); token != "" {
+		claim, err := f.ParseAddIPToken(token)
+		if err != nil {
+			return err
+		}
+
+		ip = claim.IP
+	}
+
 	t, err := consulkvipset.AddIpsetRecord(f.ConsulClient, f.ConsulPath, info.ID, ip)
 	if err != nil {
 		return fmt.Errorf("could not add ip to consul kv store: %s", err)

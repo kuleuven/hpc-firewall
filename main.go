@@ -43,6 +43,7 @@ func main() {
 	rootCmd.Flags().StringVarP(&config.ConsulPath, "consul-path", "p", os.Getenv("CONSUL_PATH"), "Consul path")
 	rootCmd.Flags().StringVar(&config.HashKey, "hash-key", os.Getenv("HASH_KEY"), "Hash key for securecookie. Should be at least 32 bytes long")
 	rootCmd.Flags().StringVar(&config.BlockKey, "block-key", os.Getenv("BLOCK_KEY"), "Block key for securecookie. Should be 16 (AES-128) or 32 bytes (AES-256) long")
+	rootCmd.Flags().StringVar(&config.AddIPSecret, "add-ip-secret", os.Getenv("ADD_IP_SECRET"), "Secret to encode jwt tokens to add an ip")
 	rootCmd.Flags().StringVarP(&config.Domain, "domain", "d", os.Getenv("DOMAIN"), "Domain to host the website")
 	rootCmd.Flags().StringSliceVarP(&config.Subdomains, "subdomains", "s", strings.Split(os.Getenv("SUBDOMAINS"), ","), "Subdomains for ipv4 and ipv6 detection")
 
