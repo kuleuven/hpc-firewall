@@ -49,6 +49,7 @@ func (f *Firewall) ParseOauthSessionToken(tknStr string) (*OauthSessionClaim, er
 	if err != nil {
 		return nil, err
 	}
+
 	if !tkn.Valid {
 		return nil, ErrInvalidToken
 	}
@@ -70,5 +71,6 @@ func JwtError(c echo.Context, err error) error {
 	if err == jwt.ErrSignatureInvalid || err == ErrInvalidToken {
 		return c.JSON(http.StatusUnauthorized, response)
 	}
+
 	return c.JSON(http.StatusBadRequest, response)
 }

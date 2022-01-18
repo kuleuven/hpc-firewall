@@ -21,6 +21,7 @@ func (f *Firewall) handleRoot(c echo.Context) error {
 	}
 
 	url := f.OauthConfig.AuthCodeURL(stateString)
+
 	return c.Redirect(http.StatusTemporaryRedirect, url)
 }
 

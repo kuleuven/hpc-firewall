@@ -31,7 +31,6 @@ func ListEffectiveIPs(client *consul.Client, path string, index uint64) ([]Ipset
 	)
 
 	ips, now, index, err = s.IPs(index)
-
 	if err != nil {
 		return nil, index, err
 	}

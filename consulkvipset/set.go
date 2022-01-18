@@ -30,8 +30,7 @@ func NewIpset(client *consul.Client, path string) Ipset {
 
 // Records retrieves all records of a KVIpset
 func (s *kvIpset) Records(index uint64) ([]Record, uint64, error) {
-	err := s.read(index)
-	if err != nil {
+	if err := s.read(index); err != nil {
 		return nil, 0, err
 	}
 
@@ -46,14 +45,13 @@ func (s *kvIpset) Records(index uint64) ([]Record, uint64, error) {
 
 // IPs returns a list of ips that are now in the ipset (regarding since and expiration)
 func (s *kvIpset) IPs(index uint64) ([]IP, time.Time, uint64, error) {
-	err := s.read(index)
-	if err != nil {
+	if err := s.read(index); err != nil {
 		return nil, time.Time{}, 0, err
 	}
 
 	now := time.Now()
 
-	var entries = []IP{}
+	entries := []IP{}
 
 	for _, record := range s.records {
 		e := record.effective(now)
@@ -65,12 +63,11 @@ func (s *kvIpset) IPs(index uint64) ([]IP, time.Time, uint64, error) {
 
 // IPsAtTime returns a list of ips that are in the ipset at a given time (regarding since and expiration)
 func (s *kvIpset) IPsAtTime(now time.Time, index uint64) ([]IP, uint64, error) {
-	err := s.read(index)
-	if err != nil {
+	if err := s.read(index); err != nil {
 		return nil, 0, err
 	}
 
-	var entries = []IP{}
+	entries := []IP{}
 
 	for _, record := range s.records {
 		e := record.effective(now)

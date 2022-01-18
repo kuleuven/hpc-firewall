@@ -40,8 +40,7 @@ func NewRecord(client *consul.Client, path string, label string) Record {
 
 // IPs returns a list of addresses that are currently valid
 func (r *kvRecord) IPs(index uint64) ([]IP, time.Time, uint64, error) {
-	err := r.read(index)
-	if err != nil {
+	if err := r.read(index); err != nil {
 		return nil, time.Time{}, 0, err
 	}
 
@@ -52,8 +51,7 @@ func (r *kvRecord) IPs(index uint64) ([]IP, time.Time, uint64, error) {
 
 // IPsAtTime returns a list of addresses that are valid at a given time
 func (r *kvRecord) IPsAtTime(now time.Time, index uint64) ([]IP, uint64, error) {
-	err := r.read(index)
-	if err != nil {
+	if err := r.read(index); err != nil {
 		return nil, 0, err
 	}
 

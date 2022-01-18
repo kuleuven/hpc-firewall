@@ -18,6 +18,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
+// nolint:gosec
 const (
 	OauthAuthURL       = "https://account.vscentrum.be/django/oauth/authorize/"
 	OauthTokenURL      = "https://account.vscentrum.be/django/oauth/token/"
@@ -26,7 +27,7 @@ const (
 	CookieName         = "hpc-firewall"
 )
 
-// A FirewallConfig object represents all firewall paramters
+// A FirewallConfig object represents all firewall parameters
 type FirewallConfig struct {
 	OauthClientID     string
 	OauthClientSecret string
@@ -66,9 +67,11 @@ func NewFirewall(config FirewallConfig) (*Firewall, error) {
 
 	// Consul client
 	consulConfig := consul.DefaultConfig()
+
 	if config.ConsulURL != "" {
 		consulConfig.Address = config.ConsulURL
 	}
+
 	if config.ConsulToken != "" {
 		consulConfig.Token = config.ConsulToken
 	}
@@ -214,7 +217,6 @@ func (f *Firewall) checkAuthenticated(c echo.Context) (*UserInfo, *CookiePayload
 	// Check whether token is valid
 	if payload != nil && !payload.Admin && payload.Token != "" {
 		info, err := f.getUserInfo(payload.Token)
-
 		if err == nil {
 			return info, payload
 		}

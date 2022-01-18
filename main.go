@@ -9,9 +9,9 @@ import (
 )
 
 func main() {
-	var config = FirewallConfig{}
+	config := FirewallConfig{}
 
-	var rootCmd = &cobra.Command{
+	rootCmd := &cobra.Command{
 		Use:   "hpc-firewall",
 		Short: "HPC firewall runs a web server to add client ips to consul",
 		Long: `HPC firewall is a web server with oauth for client authentication,

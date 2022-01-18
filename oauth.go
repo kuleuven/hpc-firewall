@@ -1,13 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
 	echo "github.com/labstack/echo/v4"
-	"golang.org/x/oauth2"
 )
 
 func (f *Firewall) handleOauthCallback(c echo.Context) error {
@@ -55,7 +55,7 @@ func (f *Firewall) handleOauthCallback(c echo.Context) error {
 }
 
 func (f *Firewall) getToken(code string) (string, error) {
-	token, err := f.OauthConfig.Exchange(oauth2.NoContext, code)
+	token, err := f.OauthConfig.Exchange(context.Background(), code)
 	if err != nil {
 		return "", fmt.Errorf("code exchange failed: %s", err.Error())
 	}
@@ -71,13 +71,17 @@ type UserInfo struct {
 }
 
 func (f *Firewall) getUserInfo(token string) (*UserInfo, error) {
-	var bearer = "Bearer " + token
+	bearer := "Bearer " + token
 
 	req, err := http.NewRequest("GET", OauthIntrospectURL, nil)
+	if err != nil {
+		return nil, err
+	}
 
 	req.Header.Add("Authorization", bearer)
 
 	client := &http.Client{}
+
 	response, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed getting user info: %s", err.Error())
@@ -88,6 +92,7 @@ func (f *Firewall) getUserInfo(token string) (*UserInfo, error) {
 	}
 
 	defer response.Body.Close()
+
 	contents, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed reading response body: %s", err.Error())
