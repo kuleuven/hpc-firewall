@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"gitea.icts.kuleuven.be/hpc/hpc-firewall/consulkvipset"
@@ -37,9 +36,7 @@ func (f *Firewall) handleAddAuthenticated(c echo.Context, info *UserInfo) error 
 
 	for _, trustedIP := range f.TrustedProxies {
 		if ip == trustedIP {
-			log.Printf("Headers: %v\n", c.Request().Header)
-
-			return c.JSON(http.StatusOK, &AddResponse{IP: ip, Message: "To be implemented"})
+			ip = getFFIP(c.Request().Header.Get("X-Orig-Forwarded-For"))
 		}
 	}
 
