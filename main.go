@@ -45,7 +45,7 @@ func main() {
 	rootCmd.Flags().StringVar(&config.BlockKey, "block-key", os.Getenv("BLOCK_KEY"), "Block key for securecookie. Should be 16 (AES-128) or 32 bytes (AES-256) long")
 	rootCmd.Flags().StringVarP(&config.Domain, "domain", "d", os.Getenv("DOMAIN"), "Domain to host the website")
 	rootCmd.Flags().StringSliceVar(&config.Endpoints, "endpoints", strings.Split(os.Getenv("ENDPOINTS"), ","), "Endpoints for ip detection")
-	rootCmd.Flags().StringSliceVar(&config.TrustedProxies, "trusted-proxies", strings.Split(os.Getenv("TRUSTED_PROXIES"), ",")), "IPs to trust X-Forwarded-For header from")
+	rootCmd.Flags().StringSliceVar(&config.TrustedProxies, "trusted-proxies", strings.Split(os.Getenv("TRUSTED_PROXIES"), ","), "IPs to trust X-Forwarded-For header from")
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
