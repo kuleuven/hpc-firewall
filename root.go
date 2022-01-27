@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	echo "github.com/labstack/echo/v4"
 )
@@ -36,8 +37,15 @@ type RootPayload struct {
 
 func (f *Firewall) handleRootAuthenticated(c echo.Context, info *UserInfo, payload *CookiePayload) error {
 	endpoints := []string{}
-	for _, s := range f.Subdomains {
-		endpoints = append(endpoints, fmt.Sprintf("https://%s.%s/add", s, f.Domain))
+	for _, s := range f.Endpoints {
+		switch {
+		case strings.Contains(s, "/"):
+			endpoints = append(endpoints, fmt.Sprintf("https://%s", s))
+		case strings.Contains(s, "."):
+			endpoints = append(endpoints, fmt.Sprintf("https://%s/add", s))
+		default:
+			endpoints = append(endpoints, fmt.Sprintf("https://%s.%s/add", s, f.Domain))
+		}
 	}
 
 	encoded, err := f.SecureCookie.Encode(CookieName, payload)

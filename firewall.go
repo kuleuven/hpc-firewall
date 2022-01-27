@@ -37,7 +37,7 @@ type FirewallConfig struct {
 	HashKey           string
 	BlockKey          string
 	Domain            string
-	Subdomains        []string
+	Endpoints         []string
 }
 
 // A Firewall object represents a firewall service
@@ -153,8 +153,8 @@ func (f *Firewall) Run() error {
 
 	domains := []string{fmt.Sprintf("https://%s", f.Domain)}
 
-	for _, s := range f.Subdomains {
-		domains = append(domains, fmt.Sprintf("https://%s.%s", s, f.Domain))
+	for _, s := range f.Endpoints {
+		domains = append(domains, fmt.Sprintf("https://%s", s))
 	}
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
