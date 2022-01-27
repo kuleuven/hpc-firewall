@@ -167,8 +167,8 @@ func (f *Firewall) Run() error {
 
 	e.GET("/", f.handleRoot)
 	e.GET("/callback", f.handleOauthCallback)
-	e.GET("/add", f.handleAdd)
-	e.GET("/list", f.handleList)
+	e.GET("/fw/add", f.handleAdd)
+	e.GET("/fw/list", f.handleList)
 	e.GET("/ipset", f.handleIpset)
 	e.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", assetHandler)))
 

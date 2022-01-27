@@ -42,9 +42,9 @@ func (f *Firewall) handleRootAuthenticated(c echo.Context, info *UserInfo, paylo
 		case strings.Contains(s, "/"):
 			endpoints = append(endpoints, fmt.Sprintf("https://%s", s))
 		case strings.Contains(s, "."):
-			endpoints = append(endpoints, fmt.Sprintf("https://%s/add", s))
+			endpoints = append(endpoints, fmt.Sprintf("https://%s/fw/add", s))
 		default:
-			endpoints = append(endpoints, fmt.Sprintf("https://%s.%s/add", s, f.Domain))
+			endpoints = append(endpoints, fmt.Sprintf("https://%s.%s/fw/add", s, f.Domain))
 		}
 	}
 
@@ -55,8 +55,8 @@ func (f *Firewall) handleRootAuthenticated(c echo.Context, info *UserInfo, paylo
 
 	response := RootPayload{
 		ID:               info.ID,
-		ListURL:          fmt.Sprintf("https://%s/list", f.Domain),
-		AddURL:           fmt.Sprintf("https://%s/add", f.Domain),
+		ListURL:          fmt.Sprintf("https://%s/fw/list", f.Domain),
+		AddURL:           fmt.Sprintf("https://%s/fw/add", f.Domain),
 		AddURLSubdomains: endpoints,
 		Bearer:           encoded,
 	}
