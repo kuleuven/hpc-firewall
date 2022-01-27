@@ -38,6 +38,7 @@ type FirewallConfig struct {
 	BlockKey          string
 	Domain            string
 	Endpoints         []string
+	TrustedProxies    []string
 }
 
 // A Firewall object represents a firewall service
