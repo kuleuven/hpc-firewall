@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -43,7 +44,7 @@ func main() {
 	rootCmd.Flags().StringVar(&config.HashKey, "hash-key", os.Getenv("HASH_KEY"), "Hash key for securecookie. Should be at least 32 bytes long")
 	rootCmd.Flags().StringVar(&config.BlockKey, "block-key", os.Getenv("BLOCK_KEY"), "Block key for securecookie. Should be 16 (AES-128) or 32 bytes (AES-256) long")
 	rootCmd.Flags().StringVarP(&config.Domain, "domain", "d", os.Getenv("DOMAIN"), "Domain to host the website")
-	rootCmd.Flags().StringSliceVar(&config.Endpoints, "endpoints", nil, "Endpoints for ip detection")
+	rootCmd.Flags().StringSliceVar(&config.Endpoints, "endpoints", strings.Split(os.Getenv("ENDPOINTS"), ","), "Endpoints for ip detection")
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
